@@ -5,3 +5,5 @@ weights
 log
 
 *.ckpt
+
+__pycache__
