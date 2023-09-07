@@ -7,3 +7,5 @@ log
 *.ckpt
 
 __pycache__
+
+.vscode
