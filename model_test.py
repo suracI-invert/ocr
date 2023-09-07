@@ -12,7 +12,7 @@ from lightning.pytorch.profilers import AdvancedProfiler
 from src.data.components.collator import Collator
 from src.models.tokenizer import Tokenizer
 from src.data.datamodule import OCRDataModule
-from src.utils.transforms import Resize, ToTensor, Augmenters
+from src.utils.transforms import Resize, ToTensor
 from torchvision.transforms import Compose, RandomChoice, AugMix, AutoAugment
 
 if __name__ == '__main__':
@@ -28,7 +28,7 @@ if __name__ == '__main__':
         batch_size= 64,
         num_workers= 6,
         pin_memory= True,
-        transforms= Augmenters(),
+        transforms= Compose([Resize(70, 140), ToTensor()]),
         collate_fn= collator,
         sampler= None
     )

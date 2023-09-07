@@ -15,7 +15,7 @@ dataModule = OCRDataModule(
     batch_size= 2,
     num_workers= 0,
     pin_memory= False,
-    transforms= Augmenters(),
+    transforms= Compose([Resize(70, 140), ToTensor()]),
     collate_fn= collator,
     sampler= None
 )

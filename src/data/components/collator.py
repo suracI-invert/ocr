@@ -16,8 +16,8 @@ class Collator(object):
             tgt_input.append(sample['label_ids'])
             target_weights.append(sample['attn_mask'])
             filenames.append(sample['filename'])
-            
-        img = np.array(img, dtype=np.float32)
+        
+        img = np.array(img, dtype= np.float32)
 
         tgt_input = np.array(tgt_input, dtype=np.int64).T
 

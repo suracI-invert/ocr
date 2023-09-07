@@ -1,4 +1,3 @@
-from einops import rearrange
 from torchvision import models
 import math
 import torch
