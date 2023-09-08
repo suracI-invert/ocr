@@ -1,8 +1,10 @@
 import math
+from typing import Any
 import numpy as np
 from PIL import Image
 from torch import tensor, float32, Tensor, uint8
-from torchvision.transforms import Compose, RandomApply, RandomChoice, RandomOrder, AutoAugment, AugMix
+from torchvision.transforms import Compose, RandomApply, RandomChoice, RandomOrder, AutoAugment, AugMix, Normalize
+from transformers import AutoImageProcessor
 # import imgaug as ia
 # import imgaug.augmenters as iaa
 from random import sample
@@ -64,6 +66,19 @@ class Augmenters(object):
                 AugMix(),
             ], p= [0.4]),
         ])
+    
+    def __call__(self, img: Image.Image) -> Tensor:
+        return self.aug(img)
+    
+class SwinAugmenter(object):
+    def __init__(self, pretrained) -> None:
+        image_processor = AutoImageProcessor.from_pretrained(pretrained)
+        size = (
+            image_processor.size["shortest_edge"]
+            if "shortest_edge" in image_processor.size
+            else (image_processor.size["height"], image_processor.size["width"])
+        )
+        self.aug = Compose([Resize(size[0], size[1]), ToTensor(), Normalize(mean=image_processor.image_mean, std=image_processor.image_std)])
     
     def __call__(self, img: Image.Image) -> Tensor:
         return self.aug(img)

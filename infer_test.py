@@ -3,7 +3,7 @@ from src.models.model import Net
 from src.models.tokenizer import Tokenizer
 from src.data.datamodule import OCRDataModule
 from src.data.components.collator import Collator
-from src.utils.transforms import Resize, ToTensor
+from src.utils.transforms import Resize, ToTensor, SwinAugmenter
 
 from torch import set_float32_matmul_precision
 from torchvision.transforms import Compose
@@ -17,23 +17,6 @@ if __name__ == '__main__':
     tokenizer = Tokenizer()
 
     collator = Collator()
-
-    dataModule = OCRDataModule(
-        data_dir= './data/', map_file= 'train_annotation.txt',
-        test_dir= './data/new_public_test',
-        tokenizer= tokenizer,
-        train_val_split= [100_000, 3_000],
-        batch_size= 64,
-        num_workers= 6,
-        pin_memory= True,
-        transforms= Compose([Resize(70, 140), ToTensor()]),
-        collate_fn= collator,
-        sampler= None
-    )
-
-    dataModule.setup()
-
-    test_loader = dataModule.test_dataloader()
 
     cnn_args = {
         'weights': None,
@@ -54,6 +37,13 @@ if __name__ == '__main__':
         'hidden': 256
     }
 
+    
+    swin_args = {
+        'hidden': 256,
+        'dropout': 0.2,
+        'pretrained': 'microsoft/swin-tiny-patch4-window7-224'
+    }
+
     trans_args = {
         "d_model": 256,
         "nhead": 8,
@@ -65,7 +55,24 @@ if __name__ == '__main__':
         "trans_dropout": 0.1
     }
 
-    net = Net(len(tokenizer.chars), cnn_args, trans_args)
+    dataModule = OCRDataModule(
+        data_dir= './data/', map_file= 'train_annotation.txt',
+        test_dir= './data/new_public_test',
+        tokenizer= tokenizer,
+        train_val_split= [100_000, 3_000],
+        batch_size= 64,
+        num_workers= 6,
+        pin_memory= True,
+        transforms= SwinAugmenter(swin_args['pretrained']),
+        collate_fn= collator,
+        sampler= None
+    )
+
+    dataModule.setup()
+
+    test_loader = dataModule.test_dataloader()
+
+    net = Net(len(tokenizer.chars), 'swin', swin_args, trans_args)
 
     model = OCRLitModule.load_from_checkpoint(net= net, tokenizer= tokenizer,
         checkpoint_path= './weights/simple_vietocr_epoch=19_val_cer=0.07.ckpt',

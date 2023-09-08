@@ -12,28 +12,11 @@ from lightning.pytorch.profilers import AdvancedProfiler
 from src.data.components.collator import Collator
 from src.models.tokenizer import Tokenizer
 from src.data.datamodule import OCRDataModule
-from src.utils.transforms import Resize, ToTensor
+from src.utils.transforms import Resize, ToTensor, SwinAugmenter
 from torchvision.transforms import Compose, RandomChoice, AugMix, AutoAugment
 
 if __name__ == '__main__':
     set_float32_matmul_precision('medium')
-    tokenizer = Tokenizer()
-    collator = Collator()
-
-    dataModule = OCRDataModule(
-        data_dir= './data/', map_file= 'train_annotation.txt',
-        test_dir= './data/new_public_test',
-        tokenizer= tokenizer,
-        train_val_split= [100_000, 3_000],
-        batch_size= 64,
-        num_workers= 6,
-        pin_memory= True,
-        transforms= Compose([Resize(70, 140), ToTensor()]),
-        collate_fn= collator,
-        sampler= None
-    )
-
-    dataModule.setup()
 
     cnn_args = {
         'weights': 'IMAGENET1K_V1',
@@ -52,6 +35,12 @@ if __name__ == '__main__':
             [1, 1]
         ],
         'hidden': 256
+    }
+
+    swin_args = {
+        'hidden': 256,
+        'dropout': 0.2,
+        'pretrained': 'microsoft/swin-tiny-patch4-window7-224'
     }
 
     trans_args = {
@@ -77,7 +66,25 @@ if __name__ == '__main__':
         'verbose': True,
     }
 
-    net = Net(len(tokenizer.chars), cnn_args, trans_args)
+    tokenizer = Tokenizer()
+    collator = Collator()
+
+    dataModule = OCRDataModule(
+        data_dir= './data/', map_file= 'train_annotation.txt',
+        test_dir= './data/new_public_test',
+        tokenizer= tokenizer,
+        train_val_split= [100_000, 3_000],
+        batch_size= 64,
+        num_workers= 6,
+        pin_memory= True,
+        transforms= SwinAugmenter(swin_args['pretrained']),
+        collate_fn= collator,
+        sampler= None
+    )
+
+    dataModule.setup()
+
+    net = Net(len(tokenizer.chars), 'swin', swin_args, trans_args)
 
     OCRModel = OCRLitModule(net, 
                             tokenizer, 
@@ -94,7 +101,7 @@ if __name__ == '__main__':
     val_loader = dataModule.val_dataloader()
     # test_loader = dataModule.test_dataloader()
 
-    tb_logger = loggers.TensorBoardLogger(save_dir= './log/')
+    tb_logger = loggers.TensorBoardLogger(save_dir= './log/', log_graph= True)
     ckpt_callback = ModelCheckpoint(dirpath= './weights/', 
                                     filename= 'simple_vietocr_{epoch:02d}_{val_cer:0.2f}',
                                     monitor= 'val_cer', 

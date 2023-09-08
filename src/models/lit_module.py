@@ -65,8 +65,8 @@ class OCRLitModule(LightningModule):
         return loss
     
     def on_train_epoch_end(self) -> None:
-        prototype_input = torch.rand((32, 3, 70, 140))
-        self.logger.experiment.log_graph(self.net, prototype_input)
+        # prototype_input = torch.rand((32, 3, 70, 140))
+        # self.logger.log_graph(self.net, prototype_input)
         for name, params in self.named_parameters():
             self.logger.experiment.add_histogram(name, params, self.current_epoch)
 
