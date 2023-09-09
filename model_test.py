@@ -1,7 +1,7 @@
 from src.models.model import Net
 from src.models.lit_module import OCRLitModule
 
-from torch import set_float32_matmul_precision
+from torch import set_float32_matmul_precision, rand
 from torch.optim import AdamW, lr_scheduler
 from lightning import Trainer
 from lightning.pytorch import loggers
@@ -12,7 +12,7 @@ from lightning.pytorch.profilers import AdvancedProfiler
 from src.data.components.collator import Collator
 from src.models.tokenizer import Tokenizer
 from src.data.datamodule import OCRDataModule
-from src.utils.transforms import Resize, ToTensor, SwinAugmenter
+from src.utils.transforms import Resize, ToTensor, SwinAugmenter, DefaultAugmenter
 from torchvision.transforms import Compose, RandomChoice, AugMix, AutoAugment
 
 if __name__ == '__main__':
@@ -69,6 +69,9 @@ if __name__ == '__main__':
     tokenizer = Tokenizer()
     collator = Collator()
 
+    # Augmenter = SwinAugmenter(swin_args['pretrained'])
+    Augmenter = DefaultAugmenter((70, 140))
+
     dataModule = OCRDataModule(
         data_dir= './data/', map_file= 'train_annotation.txt',
         test_dir= './data/new_public_test',
@@ -77,14 +80,18 @@ if __name__ == '__main__':
         batch_size= 64,
         num_workers= 6,
         pin_memory= True,
-        transforms= SwinAugmenter(swin_args['pretrained']),
+        transforms= Augmenter,
         collate_fn= collator,
         sampler= None
     )
 
     dataModule.setup()
 
-    net = Net(len(tokenizer.chars), 'swin', swin_args, trans_args)
+    net = Net(len(tokenizer.chars), 'vgg', cnn_args, trans_args)
+
+    train_loader = dataModule.train_dataloader()
+    val_loader = dataModule.val_dataloader()
+    # test_loader = dataModule.test_dataloader()
 
     OCRModel = OCRLitModule(net, 
                             tokenizer, 
@@ -94,12 +101,9 @@ if __name__ == '__main__':
                             scheduler_params= scheduler_params,
                             monitor_metric= 'val_loss',
                             interval= 'epoch',
-                            frequency= 3
+                            frequency= 3,
+                            example_input_array= next(iter(train_loader))
                         )
-
-    train_loader = dataModule.train_dataloader()
-    val_loader = dataModule.val_dataloader()
-    # test_loader = dataModule.test_dataloader()
 
     tb_logger = loggers.TensorBoardLogger(save_dir= './log/', log_graph= True)
     ckpt_callback = ModelCheckpoint(dirpath= './weights/', 

@@ -1,12 +1,19 @@
 from src.models.components.cnn import CNN
 from src.models.components.swin import SwinTransformer
 from src.models.components.transformer import Transformer
-from torch import nn, no_grad, tensor, int64, topk, sum, any, all, zeros, ones
+from torch import nn, no_grad, tensor, int64, topk, sum, any, all, zeros, ones, rand
 from torch.nn.functional import softmax
 import numpy as np
 
 class Net(nn.Module):
-    def __init__(self, vocab_size, backbone, backbone_args, transformer_args):
+    def __init__(self, vocab_size: int, backbone: str, backbone_args, transformer_args, example_input= None):
+        """
+        Parameters:
+            - vocab_size: size of the charset
+            - backbone: 'vgg' for vgg, 'swin' for swintransformer
+            - backbone_args: arguments dict for backbone module
+            - transformer_args: arguments dict for transformer module
+        """
         super().__init__()
         if backbone == 'vgg':
             self.backbone = CNN(**backbone_args)
@@ -15,6 +22,7 @@ class Net(nn.Module):
         else:
             raise('Not implemented vision backbone model')
         self.transformer = Transformer(vocab_size, **transformer_args)
+        self.example_input_array = example_input
 
     def forward(self, img, tgt_input, tgt_key_padding_mask):
         """

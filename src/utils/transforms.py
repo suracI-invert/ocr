@@ -1,5 +1,5 @@
 import math
-from typing import Any
+from typing import Any, Tuple
 import numpy as np
 from PIL import Image
 from torch import tensor, float32, Tensor, uint8
@@ -54,17 +54,11 @@ class ToFloat32(object):
             img = img.type(float32)
         return img
     
-class Augmenters(object):
-    def __init__(self) -> None:
+class DefaultAugmenter(object):
+    def __init__(self, size: Tuple[int, int]) -> None:
         self.aug = Compose([
-            Resize(70, 140),
+            Resize(size[0], size[1]),
             ToTensor(),
-            RandomChoice([
-                # ToUInt8(),
-                # AutoAugment(),
-                # ToFloat32(),
-                AugMix(),
-            ], p= [0.4]),
         ])
     
     def __call__(self, img: Image.Image) -> Tensor:

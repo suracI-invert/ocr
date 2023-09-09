@@ -1,28 +1,75 @@
-from transformers import AutoImageProcessor, SwinModel
-from PIL import Image
-import torch
-import numpy as np
-from torchvision.transforms import Compose, Normalize
+from src.models.model import Net
+from src.models.lit_module import OCRLitModule
 
-from src.utils.transforms import Resize, ToTensor
+from torch import set_float32_matmul_precision, rand
+from torch.optim import AdamW, lr_scheduler
+from lightning import Trainer
+from lightning.pytorch import loggers
+from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor, EarlyStopping, DeviceStatsMonitor
+from lightning.pytorch.tuner.tuning import Tuner
+from lightning.pytorch.profilers import AdvancedProfiler
 
-from src.models.tokenizer import Tokenizer
 from src.data.components.collator import Collator
+from src.models.tokenizer import Tokenizer
 from src.data.datamodule import OCRDataModule
-
+from src.utils.transforms import Resize, ToTensor, SwinAugmenter
+from torchvision.transforms import Compose, RandomChoice, AugMix, AutoAugment
 
 if __name__ == '__main__':
-    image_processor = AutoImageProcessor.from_pretrained("microsoft/swin-tiny-patch4-window7-224")
-    model = SwinModel.from_pretrained("microsoft/swin-tiny-patch4-window7-224")
+    set_float32_matmul_precision('medium')
+
+    cnn_args = {
+        'weights': 'IMAGENET1K_V1',
+        'ss': [
+            [2, 2],
+            [2, 2],
+            [2, 1],
+            [2, 1],
+            [1, 1]
+        ],
+        'ks': [
+            [2, 2],
+            [2, 2],
+            [2, 1],
+            [2, 1],
+            [1, 1]
+        ],
+        'hidden': 256
+    }
+
+    swin_args = {
+        'hidden': 256,
+        'dropout': 0.2,
+        'pretrained': 'microsoft/swin-tiny-patch4-window7-224'
+    }
+
+    trans_args = {
+        "d_model": 256,
+        "nhead": 8,
+        "num_encoder_layers": 6,
+        "num_decoder_layers": 6,
+        "dim_feedforward": 2048,
+        "max_seq_length": 512,
+        "pos_dropout": 0.2,
+        "trans_dropout": 0.1
+    }
+
+    scheduler_params = {
+        'mode': 'min',
+        'factor': 0.1,
+        'patience': 3,
+        'threshold': 1e-4,
+        'threshold_mode': 'rel',
+        'cooldown': 0,
+        'min_lr': 0,
+        'eps': 1e-8,
+        'verbose': True,
+    }
 
     tokenizer = Tokenizer()
     collator = Collator()
 
-    size = (
-        image_processor.size["shortest_edge"]
-        if "shortest_edge" in image_processor.size
-        else (image_processor.size["height"], image_processor.size["width"])
-    )
+    Augmenter = SwinAugmenter(swin_args['pretrained'])
 
     dataModule = OCRDataModule(
         data_dir= './data/', map_file= 'train_annotation.txt',
@@ -32,40 +79,29 @@ if __name__ == '__main__':
         batch_size= 64,
         num_workers= 6,
         pin_memory= True,
-        transforms= Compose([Resize(size[0], size[1]), ToTensor(), Normalize(mean=image_processor.image_mean, std=image_processor.image_std)]),
+        transforms= Augmenter,
         collate_fn= collator,
         sampler= None
     )
 
     dataModule.setup()
 
-    print(len(dataModule.data_train))
-    print(len(dataModule.data_valid))
-    print(len(dataModule.data_test))
+    net = Net(len(tokenizer.chars), 'swin', swin_args, trans_args)
 
-    sample = next(iter(dataModule.train_dataloader()))
+    train_loader = dataModule.train_dataloader()
+    val_loader = dataModule.val_dataloader()
+    # test_loader = dataModule.test_dataloader()
 
-
-    image = sample['img']
-
-
-    for param in model.parameters():
-        param.requires_grad = False
-
-    print(sum(p.numel() for p in model.parameters() if p.requires_grad))
-
-    # inputs = image_processor(image, return_tensors="pt")
-
-    with torch.no_grad():
-        embedding = model(image, output_hidden_states=True).reshaped_hidden_states[-1]
-
-    print(embedding.shape)
-
-
-    conv_layer = last_conv_1x1 = torch.nn.Conv2d(768, 255, 1)
-    conv = conv_layer(embedding)
-    conv = conv.transpose(-1, -2)
-    conv = conv.flatten(2)
-    conv = conv.permute(-1, 0, 1)
-
-    print(conv.shape)
+    OCRModel = OCRLitModule(net, 
+                            tokenizer, 
+                            AdamW, 
+                            lr_scheduler.ReduceLROnPlateau, 
+                            learning_rate= 8.317637711026709e-05,
+                            scheduler_params= scheduler_params,
+                            monitor_metric= 'val_loss',
+                            interval= 'epoch',
+                            frequency= 3,
+                            # example_input_array= next(iter(train_loader))
+                        )
+    
+    print(next(iter(train_loader)))
