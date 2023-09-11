@@ -1,20 +1,17 @@
+import numpy as np
+from torch import all, any, int64, nn, no_grad, ones, sum, tensor, topk, zeros
+from torch.nn.functional import softmax
+
 from src.models.components.cnn import CNN
 from src.models.components.swin import SwinTransformer
 from src.models.components.transformer import Transformer
-from torch import nn, no_grad, tensor, int64, topk, sum, any, all, zeros, ones
-from torch.nn.functional import softmax
-import numpy as np
+
 
 class Net(nn.Module):
-    def __init__(self, vocab_size, backbone, backbone_args, transformer_args):
+    def __init__(self, backbone, transformer):
         super().__init__()
-        if backbone == 'vgg':
-            self.backbone = CNN(**backbone_args)
-        elif backbone == 'swin':
-            self.backbone = SwinTransformer(**backbone_args)
-        else:
-            raise('Not implemented vision backbone model')
-        self.transformer = Transformer(vocab_size, **transformer_args)
+        self.backbone = backbone
+        self.transformer = transformer
 
     def forward(self, img, tgt_input, tgt_key_padding_mask):
         """
@@ -27,9 +24,9 @@ class Net(nn.Module):
 
         src = self.backbone(img)
 
-        return self.transformer(src, tgt_input, tgt_key_padding_mask= tgt_key_padding_mask)
-    
-    def predict(self, img, max_seq_length= 128):
+        return self.transformer(src, tgt_input, tgt_key_padding_mask=tgt_key_padding_mask)
+
+    def predict(self, img, max_seq_length=128):
         self.eval()
 
         device = img.device
@@ -44,10 +41,12 @@ class Net(nn.Module):
 
             sent_length = 0
 
-            while sent_length <= max_seq_length and not all(any(tensor(translated_sent).T == 2, dim= 1)):
-                tgt_inp = tensor(translated_sent, dtype= int64, device= device)
+            while sent_length <= max_seq_length and not all(
+                any(tensor(translated_sent).T == 2, dim=1)
+            ):
+                tgt_inp = tensor(translated_sent, dtype=int64, device=device)
                 output, memory = self.transformer.forward_decoder(tgt_inp, memory)
-                output = softmax(output, dim= -1)
+                output = softmax(output, dim=-1)
                 output = output.cpu()
 
                 values, indices = topk(output, 5)
@@ -58,7 +57,7 @@ class Net(nn.Module):
                 sent_length += 1
 
                 del output
-            
+
             translated_sent = tensor(translated_sent).T
 
             prob = tensor(prob).T

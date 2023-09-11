@@ -1,0 +1,8 @@
+_target_: src.models.components.cnn.CNN
+model:
+  _target_: src.models.components.vgg.Vgg
+  weights: IMAGENET1K_V1
+  ss: [[2, 2], [2, 2], [2, 1], [2, 1], [1, 1]]
+  ks: [[2, 2], [2, 2], [2, 1], [2, 1], [1, 1]]
+  hidden: 256
+  dropout: 0.5

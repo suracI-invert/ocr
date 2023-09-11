@@ -1,7 +1,8 @@
-from torch import tensor, float32, int64, bool
 import numpy as np
+from torch import bool, float32, int64, tensor
 
-class Collator(object):
+
+class Collator:
     def __init__(self, masked_language_model: bool = True):
         self.masked_language_model = masked_language_model
 
@@ -12,12 +13,12 @@ class Collator(object):
         filenames = []
 
         for sample in batch:
-            img.append(sample['img'])
-            tgt_input.append(sample['label_ids'])
-            target_weights.append(sample['attn_mask'])
-            filenames.append(sample['filename'])
-        
-        img = np.array(img, dtype= np.float32)
+            img.append(sample["img"])
+            tgt_input.append(sample["label_ids"])
+            target_weights.append(sample["attn_mask"])
+            filenames.append(sample["filename"])
+
+        img = np.array(img, dtype=np.float32)
 
         tgt_input = np.array(tgt_input, dtype=np.int64).T
 
@@ -25,7 +26,7 @@ class Collator(object):
         tgt_output = np.roll(tgt_input, -1, 0).T
         # tgt_output = np.roll(tgt_input, 0, 0).T
         tgt_output[:, -1] = 0
-        
+
         if self.masked_language_model:
             mask = np.random.random(size=tgt_input.shape) < 0.05
             mask = mask & (tgt_input != 0) & (tgt_input != 1) & (tgt_input != 2)
@@ -34,9 +35,9 @@ class Collator(object):
         tgt_padding_mask = np.array(target_weights)
 
         return {
-            'img': tensor(img, dtype= float32),
-            'tgt_input': tensor(tgt_input, dtype= int64),
-            'tgt_output': tensor(tgt_output, dtype= int64),
-            'tgt_padding_mask': tensor(tgt_padding_mask, dtype= bool),
-            'filename': filenames
-        }   
+            "img": tensor(img, dtype=float32),
+            "tgt_input": tensor(tgt_input, dtype=int64),
+            "tgt_output": tensor(tgt_output, dtype=int64),
+            "tgt_padding_mask": tensor(tgt_padding_mask, dtype=bool),
+            "filename": filenames,
+        }

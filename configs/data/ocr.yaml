@@ -1,0 +1,19 @@
+_target_: src.data.datamodule.OCRDataModule
+
+defaults:
+  - transforms: null
+
+data_dir: ${paths.data_dir}
+map_file: train_line.txt
+test_dir: ${paths.data_dir}/new_public_test
+train_val_split: [100_000, 3_000]
+batch_size: 8
+num_workers: 2
+pin_memory: False
+
+tokenizer:
+  _target_: src.models.tokenizer.Tokenizer
+
+collate_fn:
+  _target_: src.data.components.collator.Collator
+  masked_language_model: True

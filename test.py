@@ -1,17 +1,15 @@
-from transformers import AutoImageProcessor, SwinModel
-from PIL import Image
-import torch
 import numpy as np
+import torch
+from PIL import Image
 from torchvision.transforms import Compose, Normalize
+from transformers import AutoImageProcessor, SwinModel
 
-from src.utils.transforms import Resize, ToTensor
-
-from src.models.tokenizer import Tokenizer
 from src.data.components.collator import Collator
 from src.data.datamodule import OCRDataModule
+from src.models.tokenizer import Tokenizer
+from src.utils.transforms import Resize, ToTensor
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     image_processor = AutoImageProcessor.from_pretrained("microsoft/swin-tiny-patch4-window7-224")
     model = SwinModel.from_pretrained("microsoft/swin-tiny-patch4-window7-224")
 
@@ -25,16 +23,23 @@ if __name__ == '__main__':
     )
 
     dataModule = OCRDataModule(
-        data_dir= './data/', map_file= 'train_annotation.txt',
-        test_dir= './data/new_public_test',
-        tokenizer= tokenizer,
-        train_val_split= [100_000, 3_000],
-        batch_size= 64,
-        num_workers= 6,
-        pin_memory= True,
-        transforms= Compose([Resize(size[0], size[1]), ToTensor(), Normalize(mean=image_processor.image_mean, std=image_processor.image_std)]),
-        collate_fn= collator,
-        sampler= None
+        data_dir="./data/",
+        map_file="train_annotation.txt",
+        test_dir="./data/new_public_test",
+        tokenizer=tokenizer,
+        train_val_split=[100_000, 3_000],
+        batch_size=64,
+        num_workers=6,
+        pin_memory=True,
+        transforms=Compose(
+            [
+                Resize(size[0], size[1]),
+                ToTensor(),
+                Normalize(mean=image_processor.image_mean, std=image_processor.image_std),
+            ]
+        ),
+        collate_fn=collator,
+        sampler=None,
     )
 
     dataModule.setup()
@@ -45,9 +50,7 @@ if __name__ == '__main__':
 
     sample = next(iter(dataModule.train_dataloader()))
 
-
-    image = sample['img']
-
+    image = sample["img"]
 
     for param in model.parameters():
         param.requires_grad = False
@@ -60,7 +63,6 @@ if __name__ == '__main__':
         embedding = model(image, output_hidden_states=True).reshaped_hidden_states[-1]
 
     print(embedding.shape)
-
 
     conv_layer = last_conv_1x1 = torch.nn.Conv2d(768, 255, 1)
     conv = conv_layer(embedding)

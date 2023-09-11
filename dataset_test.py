@@ -1,23 +1,25 @@
-from src.data.components.collator import Collator
-from src.models.tokenizer import Tokenizer
-from src.data.datamodule import OCRDataModule
-from src.utils.transforms import Resize, ToTensor, Augmenters
 from torchvision.transforms import Compose
+
+from src.data.components.collator import Collator
+from src.data.datamodule import OCRDataModule
+from src.models.tokenizer import Tokenizer
+from src.utils.transforms import Augmenters, Resize, ToTensor
 
 tokenizer = Tokenizer()
 collator = Collator()
 
 dataModule = OCRDataModule(
-    data_dir= './data/', map_file= 'train_annotation.txt',
-    test_dir= './data/new_public_test',
-    tokenizer= tokenizer,
-    train_val_split= [100_000, 3_000],
-    batch_size= 2,
-    num_workers= 0,
-    pin_memory= False,
-    transforms= Compose([Resize(70, 140), ToTensor()]),
-    collate_fn= collator,
-    sampler= None
+    data_dir="./data/",
+    map_file="train_annotation.txt",
+    test_dir="./data/new_public_test",
+    tokenizer=tokenizer,
+    train_val_split=[100_000, 3_000],
+    batch_size=2,
+    num_workers=0,
+    pin_memory=False,
+    transforms=Compose([Resize(70, 140), ToTensor()]),
+    collate_fn=collator,
+    sampler=None,
 )
 
 dataModule.setup()

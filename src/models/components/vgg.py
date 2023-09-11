@@ -2,21 +2,28 @@ import torch
 from torch import nn
 from torchvision import models
 
-class Vgg(nn.Module):
-    def __init__(self, ss, ks, hidden, weights= None, dropout= 0.5):
-        super().__init__()
 
-        cnn = models.vgg11_bn(weights)
+class Vgg(nn.Module):
+    def __init__(self, ss, ks, hidden, weights=None, dropout=0.5):
+        super().__init__()
+        self.ss = ss
+        self.ks = ks
+        self.hidden = hidden
+        self.weights = weights
+        self.dropout = dropout
+        cnn = models.vgg11_bn(self.weights)
         pool_idx = 0
 
         for i, layer in enumerate(cnn.features):
             if isinstance(layer, torch.nn.MaxPool2d):
-                cnn.features[i] = torch.nn.AvgPool2d(kernel_size= ks[pool_idx], stride= ss[pool_idx], padding= 0)
+                cnn.features[i] = torch.nn.AvgPool2d(
+                    kernel_size=self.ks[pool_idx], stride=self.ss[pool_idx], padding=0
+                )
                 pool_idx += 1
 
         self.features = cnn.features
-        self.dropout = nn.Dropout(dropout)
-        self.last_conv_1x1 = nn.Conv2d(512, hidden, 1)
+        self.dropout = nn.Dropout(self.dropout)
+        self.last_conv_1x1 = nn.Conv2d(512, self.hidden, 1)
 
     def forward(self, x):
         """

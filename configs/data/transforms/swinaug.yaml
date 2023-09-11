@@ -1,0 +1,2 @@
+_target_: src.utils.transforms.SwinAugmenter
+pretrained: "microsoft/swin-tiny-patch4-window7-224"

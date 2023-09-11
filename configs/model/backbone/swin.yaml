@@ -1,0 +1,4 @@
+_target_: src.models.components.swin.SwinTransformer
+hidden: 256
+dropout: 0.2
+pretrained: "microsoft/swin-tiny-patch4-window7-224"
