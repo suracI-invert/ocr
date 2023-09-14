@@ -117,3 +117,64 @@ class SwinAugmenter(object):
 
 #     def __call__(self, img: np.ndarray) -> np.ndarray:
 #         return self.aug.augment_image(img)
+
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
+
+class AlbumentationsTransform:
+    def __init__(self):
+        self.aug = A.Compose([
+            # Blur
+            A.OneOf([
+                A.GaussianBlur(p=0.3, blur_limit=(0, 1.0)),
+                A.MotionBlur(p=0.3, blur_limit=3),
+            ]),
+            
+            # Color
+            A.OneOf([
+                A.HueSaturationValue(p=0.3, hue_shift_limit=(-10, 10), sat_shift_limit=(-10, 10)),
+                A.GaussNoise(p=0.3),
+                A.ColorJitter(p=0.3, brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
+                A.RGBShift(p=0.3),
+                A.ChannelShuffle(p=0.3),
+                A.RandomBrightnessContrast(p=0.3, brightness_limit=(-0.2, 0.2), contrast_limit=(-0.2, 0.2)),
+            ]),
+            
+            # Solarize and invert
+            A.OneOf([
+                A.Solarize(p=0.3, threshold=(32, 128)),
+                A.InvertImg(p=0.3),
+            ]),
+
+            # Dropout and multiply
+            A.OneOf([
+                A.CoarseDropout(p=0.3, max_holes=8, max_height=0.2*70, max_width=0.2*140),
+                A.MultiplicativeNoise(p=0.3),
+            ]),
+
+            # Compression
+            A.JpegCompression(p=0.3, quality_lower=5, quality_upper=80),
+
+            # Distortions
+            A.OneOf([
+                A.Perspective(p=0.3, scale=(0.01, 0.01)),
+                A.ShiftScaleRotate(p=0.3, scale_limit=(0.7, 1.3), shift_limit=(-10, 10), rotate_limit=(-5, 5), border_mode=A.BORDER_CONSTANT),
+                A.Affine(p=0.3, scale=(0.7, 1.3), translate_percent=(-0.1, 0.1), mode=A.BORDER_REFLECT),
+                A.PiecewiseAffine(p=0.3, scale=(0.01, 0.01)),
+            ]),
+
+            # Crop
+            A.OneOf([
+                # A.Crop(p=0.3, percent=(0.01, 0.05)),
+                A.CenterCrop(p=0.3, height=56, width=112),
+            ]),
+            
+            A.Normalize(),
+            ToTensorV2(),
+        ])
+    
+    def __call__(self, img):
+        img = np.array(img)
+        augmented = self.aug(image=img)
+        img = augmented['image']
+        return img
