@@ -124,6 +124,7 @@ from albumentations.pytorch import ToTensorV2
 class AlbumentationsTransform(object):
     def __init__(self, size: Tuple[int, int]):
         self.aug = A.Compose([
+            A.Resize(size[0], size[1]),
             # Blur
             A.OneOf([
                 A.GaussianBlur(p=0.3, blur_limit=(0, 1.0)),
