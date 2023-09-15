@@ -8,6 +8,8 @@ from transformers import AutoImageProcessor
 # import imgaug as ia
 # import imgaug.augmenters as iaa
 from random import sample
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
 
 class Resize(object):
     def __init__(self, height, width):
@@ -67,7 +69,8 @@ class DefaultAugmenter(object):
     def __init__(self, size: Tuple[int, int]) -> None:
         self.aug = Compose([
             Resize(size[0], size[1]),
-            ToTensor(),
+            A.Normalize(),
+            ToTensorV2(),
         ])
     
     def __call__(self, img: Image.Image) -> Tensor:
@@ -127,13 +130,9 @@ class SwinAugmenter(object):
 #     def __call__(self, img: np.ndarray) -> np.ndarray:
 #         return self.aug.augment_image(img)
 
-import albumentations as A
-from albumentations.pytorch import ToTensorV2
-
 class AlbumentationsTransform(object):
     def __init__(self, size: Tuple[int, int]):
         self.aug = A.Compose([
-            A.Resize(size[0], size[1]),
             # Blur
             A.OneOf([
                 A.GaussianBlur(p=0.3, sigma_limit=(0, 1.0)),
@@ -158,17 +157,17 @@ class AlbumentationsTransform(object):
 
             # Dropout and multiply
             A.OneOf([
-                A.CoarseDropout(p=0.3, max_holes=8, max_height=0.2, max_width=0.2),
+                A.CoarseDropout(p=0.3, max_holes=8, max_height=0.1, max_width=0.1),
                 A.MultiplicativeNoise(p=0.3),
             ]),
 
             # Compression
-            A.ImageCompression(p=0.3, quality_lower=5, quality_upper=80),
+            A.ImageCompression(p=0.3, quality_lower=70, quality_upper=90),
 
             # Distortions
             A.OneOf([
                 A.Perspective(p=0.3, scale=(0.01, 0.01)),
-                A.ShiftScaleRotate(p=0.3, scale_limit=(0.7, 1.3), shift_limit=(-10, 10), rotate_limit=(-5, 5)),
+                A.ShiftScaleRotate(p=0.3, scale_limit=(-0.1, 0.1), shift_limit=(-0.05, 0.05), rotate_limit=(-5, 5)),
                 A.Affine(p=0.3, scale=(0.7, 1.3), translate_percent=(-0.1, 0.1)),
                 A.PiecewiseAffine(p=0.3, scale=(0.01, 0.01)),
             ]),
@@ -178,7 +177,7 @@ class AlbumentationsTransform(object):
             #     # A.Crop(p=0.3, percent=(0.01, 0.05)),
             #     A.CenterCrop(p=0.3, height=0.8*size[0], width=0.8*size[1]),
             # ]),
-            
+            A.Resize(size[0], size[1]),
             A.Normalize(),
             ToTensorV2(),
         ])
