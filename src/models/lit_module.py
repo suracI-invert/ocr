@@ -48,9 +48,6 @@ class OCRLitModule(LightningModule):
             example_input_array['tgt_padding_mask']
         )
 
-        if self.logger.log_dir:
-            print(f'Logs saved at {self.logger.log_dir}')
-
     def forward(self, img: torch.Tensor, tgt_input: torch.Tensor, tgt_padding_mask: torch.Tensor) -> torch.Tensor:
         return self.net(img, tgt_input, tgt_padding_mask)
     
@@ -58,6 +55,9 @@ class OCRLitModule(LightningModule):
         self.val_loss.reset()
         self.val_cer.reset()
         self.val_cer_best.reset()
+
+        if self.logger.log_dir:
+            print(f'Logs saved at {self.logger.log_dir}')
 
         if self.example_input_array:
             self.logger.log_graph(self)
