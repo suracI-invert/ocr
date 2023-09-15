@@ -1,107 +1,39 @@
-from src.models.model import Net
-from src.models.lit_module import OCRLitModule
+from PIL import Image, ImageOps
+import os
 
-from torch import set_float32_matmul_precision, rand
-from torch.optim import AdamW, lr_scheduler
-from lightning import Trainer
-from lightning.pytorch import loggers
-from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor, EarlyStopping, DeviceStatsMonitor
-from lightning.pytorch.tuner.tuning import Tuner
-from lightning.pytorch.profilers import AdvancedProfiler
+def padding(img, expected_size):
+    desired_size = expected_size
+    delta_width = desired_size[0] - img.size[0]
+    delta_height = desired_size[1] - img.size[1]
+    pad_width = delta_width // 2
+    pad_height = delta_height // 2
+    padding = (pad_width, pad_height, delta_width - pad_width, delta_height - pad_height)
+    return ImageOps.expand(img, padding)
 
-from src.data.components.collator import Collator
-from src.models.tokenizer import Tokenizer
-from src.data.datamodule import OCRDataModule
-from src.utils.transforms import Resize, ToTensor, SwinAugmenter
-from torchvision.transforms import Compose, RandomChoice, AugMix, AutoAugment
 
-if __name__ == '__main__':
-    set_float32_matmul_precision('medium')
+def resize_with_padding(img, expected_size):
+    img.thumbnail((expected_size[0], expected_size[1]))
+    # print(img.size)
+    delta_width = expected_size[0] - img.size[0]
+    delta_height = expected_size[1] - img.size[1]
+    pad_width = delta_width // 2
+    pad_height = delta_height // 2
+    padding = (pad_width, pad_height, delta_width - pad_width, delta_height - pad_height)
+    return ImageOps.expand(img, padding)
 
-    cnn_args = {
-        'weights': 'IMAGENET1K_V1',
-        'ss': [
-            [2, 2],
-            [2, 2],
-            [2, 1],
-            [2, 1],
-            [1, 1]
-        ],
-        'ks': [
-            [2, 2],
-            [2, 2],
-            [2, 1],
-            [2, 1],
-            [1, 1]
-        ],
-        'hidden': 256
-    }
+if __name__ == "__main__":
+    list_fns = os.listdir('./data/new_public_test')[:10]
+    img_sizes = []
+    for fname in list_fns:
+        img = Image.open(os.path.join('./data/new_public_test', fname))
+        img.save(f'./ori_img/{fname}')
+        img = resize_with_padding(img, (70, 32))
+        img_sizes.append(img.size)
+        img.save(f"./resize_img/{fname}")
+    for i in range(len(img_sizes) - 1):
+        if img_sizes[i][0] != img_sizes[i + 1][0] and img_sizes[i][1] != img_sizes[i + 1][1]:
+            print(i)
 
-    swin_args = {
-        'hidden': 256,
-        'dropout': 0.2,
-        'pretrained': 'microsoft/swin-tiny-patch4-window7-224'
-    }
-
-    trans_args = {
-        "d_model": 256,
-        "nhead": 8,
-        "num_encoder_layers": 6,
-        "num_decoder_layers": 6,
-        "dim_feedforward": 2048,
-        "max_seq_length": 512,
-        "pos_dropout": 0.2,
-        "trans_dropout": 0.1
-    }
-
-    scheduler_params = {
-        'mode': 'min',
-        'factor': 0.1,
-        'patience': 3,
-        'threshold': 1e-4,
-        'threshold_mode': 'rel',
-        'cooldown': 0,
-        'min_lr': 0,
-        'eps': 1e-8,
-        'verbose': True,
-    }
-
-    tokenizer = Tokenizer()
-    collator = Collator()
-
-    Augmenter = SwinAugmenter(swin_args['pretrained'])
-
-    dataModule = OCRDataModule(
-        data_dir= './data/', map_file= 'train_annotation.txt',
-        test_dir= './data/new_public_test',
-        tokenizer= tokenizer,
-        train_val_split= [100_000, 3_000],
-        batch_size= 64,
-        num_workers= 6,
-        pin_memory= True,
-        transforms= Augmenter,
-        collate_fn= collator,
-        sampler= None
-    )
-
-    dataModule.setup()
-
-    net = Net(len(tokenizer.chars), 'swin', swin_args, trans_args)
-
-    train_loader = dataModule.train_dataloader()
-    val_loader = dataModule.val_dataloader()
-    # test_loader = dataModule.test_dataloader()
-
-    OCRModel = OCRLitModule(net, 
-                            tokenizer, 
-                            AdamW, 
-                            lr_scheduler.ReduceLROnPlateau, 
-                            learning_rate= 8.317637711026709e-05,
-                            scheduler_params= scheduler_params,
-                            monitor_metric= 'val_loss',
-                            interval= 'epoch',
-                            frequency= 3,
-                            # example_input_array= next(iter(train_loader))
-                        )
-    
-    print(next(iter(train_loader)))
+    idx = 1
+    oriImg = Image.open(os.path.join('./data/new_public_test', list_fns[idx]))
+    resize = Image.open(os.path.join('./resize_img', list_fns[idx]))

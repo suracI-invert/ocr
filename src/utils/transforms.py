@@ -1,7 +1,7 @@
 import math
 from typing import Any, Tuple
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
 from torch import tensor, float32, Tensor, uint8
 from torchvision.transforms import Compose, RandomApply, RandomChoice, RandomOrder, AutoAugment, AugMix, Normalize
 from transformers import AutoImageProcessor
@@ -10,32 +10,41 @@ from transformers import AutoImageProcessor
 from random import sample
 
 class Resize(object):
-    def __init__(self, height, min_width):
+    def __init__(self, height, width):
         self.height = height
-        self.min_width = min_width
-        # self.max_width = max_width
+        self.width = width
 
     def __call__(self, img: Image.Image) -> np.ndarray:
         img = img.convert('RGB')
-        w, h = img.size
-        # new_w = self.get_new_size(w, h)
-
-        # variable width when batching, need to bucket/sampler to group data with same width
-        # img = img.resize((new_w, self.height), Image.ANTIALIAS)
         
-        img = img.resize((self.min_width, self.height), Image.ANTIALIAS)
+        img = img.resize((self.width, self.height), Image.ANTIALIAS)
         img = np.asarray(img)
         return img
-
-    # def get_new_size(self, w, h):
-    #     new_w = int(self.height * float(w) / float(h))
-    #     round_to = 10
-    #     new_w = math.ceil(new_w/round_to)*round_to
-    #     new_w = max(new_w, self.min_width)
-    #     new_w = min(new_w, self.max_width)
-
-    #     return new_w
     
+class ResizeWithPadding(object):
+    def __init__(self, height, width) -> None:
+        pass
+
+def padding(img, expected_size):
+    desired_size = expected_size
+    delta_width = desired_size[0] - img.size[0]
+    delta_height = desired_size[1] - img.size[1]
+    pad_width = delta_width // 2
+    pad_height = delta_height // 2
+    padding = (pad_width, pad_height, delta_width - pad_width, delta_height - pad_height)
+    return ImageOps.expand(img, padding)
+
+
+def resize_with_padding(img, expected_size):
+    img.thumbnail((expected_size[0], expected_size[1]))
+    delta_width = expected_size[0] - img.size[0]
+    delta_height = expected_size[1] - img.size[1]
+    pad_width = delta_width // 2
+    pad_height = delta_height // 2
+    padding = (pad_width, pad_height, delta_width - pad_width, delta_height - pad_height)
+    return ImageOps.expand(img, padding)
+
+
 class ToTensor(object):
     def __call__(self, img: np.ndarray) -> Tensor:
         img = img.transpose(2, 0, 1)
