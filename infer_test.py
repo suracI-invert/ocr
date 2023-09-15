@@ -19,7 +19,7 @@ if __name__ == '__main__':
     collator = Collator()
 
     cnn_args = {
-        'weights': None,
+        'weights': 'IMAGENET1K_V1',
         'ss': [
             [2, 2],
             [2, 2],
@@ -47,8 +47,8 @@ if __name__ == '__main__':
     trans_args = {
         "d_model": 256,
         "nhead": 8,
-        "num_encoder_layers": 4,
-        "num_decoder_layers": 4,
+        "num_encoder_layers": 6,
+        "num_decoder_layers": 6,
         "dim_feedforward": 2048,
         "max_seq_length": 512,
         "pos_dropout": 0.2,

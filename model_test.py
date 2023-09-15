@@ -12,7 +12,7 @@ from lightning.pytorch.profilers import AdvancedProfiler
 from src.data.components.collator import Collator
 from src.models.tokenizer import Tokenizer
 from src.data.datamodule import OCRDataModule
-from src.utils.transforms import Resize, ToTensor, SwinAugmenter, DefaultAugmenter
+from src.utils.transforms import Resize, ToTensor, SwinAugmenter, DefaultAugmenter, AlbumentationsTransform
 from torchvision.transforms import Compose, RandomChoice, AugMix, AutoAugment
 
 if __name__ == '__main__':
@@ -70,15 +70,15 @@ if __name__ == '__main__':
     collator = Collator()
 
     # Augmenter = SwinAugmenter(swin_args['pretrained'])
-    Augmenter = DefaultAugmenter((70, 140))
+    Augmenter = AlbumentationsTransform((70, 140))
 
     dataModule = OCRDataModule(
-        data_dir= './data/', map_file= 'train_annotation.txt',
+        data_dir= './data/', map_file= 'train_line.txt',
         test_dir= './data/new_public_test',
         tokenizer= tokenizer,
         train_val_split= [100_000, 3_000],
         batch_size= 64,
-        num_workers= 6,
+        num_workers= 4,
         pin_memory= True,
         transforms= Augmenter,
         collate_fn= collator,
@@ -107,7 +107,7 @@ if __name__ == '__main__':
 
     tb_logger = loggers.TensorBoardLogger(save_dir= './log/', log_graph= True)
     ckpt_callback = ModelCheckpoint(dirpath= './weights/', 
-                                    filename= 'simple_vietocr_{epoch:02d}_{val_cer:0.2f}',
+                                    filename= 'vietocr_{epoch:02d}_{val_cer:0.2f}',
                                     monitor= 'val_cer', 
                                     save_on_train_epoch_end= True,
                                     save_top_k= 1
@@ -121,7 +121,7 @@ if __name__ == '__main__':
     trainer = Trainer(accelerator= 'gpu',
                       precision= '16-mixed', 
                     #   max_time= '00:00:02:00',
-                      max_epochs= 20, 
+                      max_epochs= 25, 
                       benchmark= True,
                       logger= tb_logger,
                       profiler= profiler,
