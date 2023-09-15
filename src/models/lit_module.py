@@ -46,7 +46,7 @@ class OCRLitModule(LightningModule):
             example_input_array['img'],
             example_input_array['tgt_input'],
             example_input_array['tgt_padding_mask']
-        )
+        ) if example_input_array else None
 
     def forward(self, img: torch.Tensor, tgt_input: torch.Tensor, tgt_padding_mask: torch.Tensor) -> torch.Tensor:
         return self.net(img, tgt_input, tgt_padding_mask)
