@@ -12,9 +12,13 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
 class Resize(object):
-    def __init__(self, height, width):
-        self.height = height
-        self.width = width
+    def __init__(self, size):
+        """
+            Resize with size (width, height)
+            Return nparray image
+        """
+        self.width = size[0]
+        self.height = size[1]
 
     def __call__(self, img: Image.Image) -> np.ndarray:
         img = img.convert('RGB')
@@ -24,8 +28,17 @@ class Resize(object):
         return img
     
 class ResizeWithPadding(object):
-    def __init__(self, height, width) -> None:
-        pass
+    def __init__(self, size):
+        """
+            Resize with padding to make image size uniform (width, height)
+            return nparray
+        """
+        self.size = size
+
+    def __call__(self, img: Image.Image) -> np.ndarray:
+        img = img.convert('RGB')
+        img = resize_with_padding(img, self.size)
+        return np.asarray(img)
 
 def padding(img, expected_size):
     desired_size = expected_size
