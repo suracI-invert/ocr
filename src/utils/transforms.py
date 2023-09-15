@@ -121,8 +121,8 @@ class SwinAugmenter(object):
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
-class AlbumentationsTransform:
-    def __init__(self):
+class AlbumentationsTransform(object):
+    def __init__(self, size: Tuple[int, int]):
         self.aug = A.Compose([
             # Blur
             A.OneOf([
@@ -148,7 +148,7 @@ class AlbumentationsTransform:
 
             # Dropout and multiply
             A.OneOf([
-                A.CoarseDropout(p=0.3, max_holes=8, max_height=0.2*70, max_width=0.2*140),
+                A.CoarseDropout(p=0.3, max_holes=8, max_height=0.2, max_width=0.2),
                 A.MultiplicativeNoise(p=0.3),
             ]),
 
@@ -158,16 +158,16 @@ class AlbumentationsTransform:
             # Distortions
             A.OneOf([
                 A.Perspective(p=0.3, scale=(0.01, 0.01)),
-                A.ShiftScaleRotate(p=0.3, scale_limit=(0.7, 1.3), shift_limit=(-10, 10), rotate_limit=(-5, 5), border_mode=A.BORDER_CONSTANT),
-                A.Affine(p=0.3, scale=(0.7, 1.3), translate_percent=(-0.1, 0.1), mode=A.BORDER_REFLECT),
+                A.ShiftScaleRotate(p=0.3, scale_limit=(0.7, 1.3), shift_limit=(-10, 10), rotate_limit=(-5, 5)),
+                A.Affine(p=0.3, scale=(0.7, 1.3), translate_percent=(-0.1, 0.1)),
                 A.PiecewiseAffine(p=0.3, scale=(0.01, 0.01)),
             ]),
 
             # Crop
-            A.OneOf([
-                # A.Crop(p=0.3, percent=(0.01, 0.05)),
-                A.CenterCrop(p=0.3, height=56, width=112),
-            ]),
+            # A.OneOf([
+            #     # A.Crop(p=0.3, percent=(0.01, 0.05)),
+            #     A.CenterCrop(p=0.3, height=0.8*size[0], width=0.8*size[1]),
+            # ]),
             
             A.Normalize(),
             ToTensorV2(),

@@ -1,13 +1,13 @@
 import torch
 from torch import nn
 from torchvision import models
-from torchvision.models.vgg import VGG19_BN_Weights
+# from torchvision.models.vgg import VGG19_BN_Weights
 
 class Vgg(nn.Module):
     def __init__(self, ss, ks, hidden, weights= None, dropout= 0.5):
         super().__init__()
 
-        cnn = models.vgg19_bn(weights=VGG19_BN_Weights.DEFAULT)
+        cnn = models.vgg19_bn(weights)
         pool_idx = 0
 
         for i, layer in enumerate(cnn.features):
