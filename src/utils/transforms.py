@@ -127,7 +127,7 @@ class AlbumentationsTransform(object):
             A.Resize(size[0], size[1]),
             # Blur
             A.OneOf([
-                A.GaussianBlur(p=0.3, blur_limit=(0, 1.0)),
+                A.GaussianBlur(p=0.3, sigma_limit=(0, 1.0)),
                 A.MotionBlur(p=0.3, blur_limit=3),
             ]),
             
@@ -154,7 +154,7 @@ class AlbumentationsTransform(object):
             ]),
 
             # Compression
-            A.JpegCompression(p=0.3, quality_lower=5, quality_upper=80),
+            A.ImageCompression(p=0.3, quality_lower=5, quality_upper=80),
 
             # Distortions
             A.OneOf([
