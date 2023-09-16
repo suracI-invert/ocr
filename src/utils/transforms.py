@@ -81,6 +81,7 @@ class ToFloat32(object):
 class DefaultAugmenter(object):
     def __init__(self, size: Tuple[int, int]) -> None:
         self.aug = Compose([
+            # ResizeWithPadding(size),
             Resize(size[0], size[1]),
             ToTensor(),
         ])
@@ -190,7 +191,7 @@ class AlbumentationsTransform(object):
             #     A.CenterCrop(p=0.3, height=0.8*size[0], width=0.8*size[1]),
             # ]),
             A.Resize(size[0], size[1]),
-            # A.Normalize(),
+            A.Normalize(),
             ToTensorV2(),
         ])
     
