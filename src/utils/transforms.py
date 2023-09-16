@@ -82,8 +82,7 @@ class DefaultAugmenter(object):
     def __init__(self, size: Tuple[int, int]) -> None:
         self.aug = Compose([
             Resize(size[0], size[1]),
-            A.Normalize(),
-            ToTensorV2(),
+            ToTensor(),
         ])
     
     def __call__(self, img: Image.Image) -> Tensor:
@@ -163,15 +162,15 @@ class AlbumentationsTransform(object):
             ]),
             
             # Solarize and invert
-            A.OneOf([
-                A.Solarize(p=0.3, threshold=(32, 128)),
-                A.InvertImg(p=0.3),
-            ]),
+            # A.OneOf([
+            #     A.Solarize(p=0.05, threshold=(32, 128)),
+            #     A.InvertImg(p=0.1),
+            # ]),
 
             # Dropout and multiply
             A.OneOf([
-                A.CoarseDropout(p=0.3, max_holes=8, max_height=0.1, max_width=0.1),
-                A.MultiplicativeNoise(p=0.3),
+                A.CoarseDropout(p=0.1, max_holes=4, max_height=0.08, max_width=0.08),
+                A.MultiplicativeNoise(p=0.3, multiplier=(0.6, 1.4)),
             ]),
 
             # Compression
@@ -191,7 +190,7 @@ class AlbumentationsTransform(object):
             #     A.CenterCrop(p=0.3, height=0.8*size[0], width=0.8*size[1]),
             # ]),
             A.Resize(size[0], size[1]),
-            A.Normalize(),
+            # A.Normalize(),
             ToTensorV2(),
         ])
     

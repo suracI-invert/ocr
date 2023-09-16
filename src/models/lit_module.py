@@ -83,9 +83,9 @@ class OCRLitModule(LightningModule):
 
         return loss
     
-    def on_train_epoch_end(self) -> None:
-        for name, params in self.named_parameters():
-            self.logger.experiment.add_histogram(name, params, self.current_epoch)
+    # def on_train_epoch_end(self) -> None:
+    #     for name, params in self.named_parameters():
+    #         self.logger.experiment.add_histogram(name, params, self.current_epoch)
 
 
     def validation_step(self, batch: Dict[str, torch.Tensor], batch_idx: int) -> torch.Tensor:
