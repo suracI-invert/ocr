@@ -105,7 +105,8 @@ if __name__ == '__main__':
                             example_input_array= next(iter(train_loader))
                         )
 
-    tb_logger = loggers.TensorBoardLogger(save_dir= './log/', log_graph= True)
+    # tb_logger = loggers.TensorBoardLogger(save_dir= './log/', log_graph= True)
+    wandb_logger = loggers.WandbLogger(save_dir="./logs", project="Neuromancers-OCR")
     ckpt_callback = ModelCheckpoint(dirpath= './weights/', 
                                     filename= 'vietocr_{epoch:02d}_{val_cer:0.2f}',
                                     monitor= 'val_cer', 
@@ -123,7 +124,7 @@ if __name__ == '__main__':
                     #   max_time= '00:00:02:00',
                       max_epochs= 25, 
                       benchmark= True,
-                      logger= tb_logger,
+                      logger= wandb_logger,
                       profiler= profiler,
                       log_every_n_steps= 5,
                       check_val_every_n_epoch= 1,
