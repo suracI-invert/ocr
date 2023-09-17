@@ -101,6 +101,64 @@ class SwinAugmenter(object):
     
     def __call__(self, img: Image.Image) -> Tensor:
         return self.aug(img)
+    
+class AlbumentationsWithPadding(object):
+    def __init__(self, size: Tuple[int, int]):
+        self.resize = ResizeWithPadding(size)
+        self.aug = A.Compose([
+            # Blur
+            A.OneOf([
+                A.GaussianBlur(p=0.3, sigma_limit=(0, 1.0)),
+                A.MotionBlur(p=0.3, blur_limit=3),
+            ]),
+            
+            # Color
+            A.OneOf([
+                A.HueSaturationValue(p=0.3, hue_shift_limit=(-10, 10), sat_shift_limit=(-10, 10)),
+                A.GaussNoise(p=0.3),
+                A.ColorJitter(p=0.3, brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
+                A.RGBShift(p=0.3),
+                A.ChannelShuffle(p=0.3),
+                A.RandomBrightnessContrast(p=0.3, brightness_limit=(-0.2, 0.2), contrast_limit=(-0.2, 0.2)),
+            ]),
+            
+            # Solarize and invert
+            # A.OneOf([
+            #     A.Solarize(p=0.05, threshold=(32, 128)),
+            #     A.InvertImg(p=0.1),
+            # ]),
+
+            # Dropout and multiply
+            A.OneOf([
+                A.CoarseDropout(p=0.1, max_holes=4, max_height=0.08, max_width=0.08),
+                A.MultiplicativeNoise(p=0.3, multiplier=(0.6, 1.4)),
+            ]),
+
+            # Compression
+            A.ImageCompression(p=0.3, quality_lower=70, quality_upper=90),
+
+            # Distortions
+            A.OneOf([
+                A.Perspective(p=0.3, scale=(0.01, 0.01)),
+                A.ShiftScaleRotate(p=0.3, scale_limit=(-0.1, 0.1), shift_limit=(-0.05, 0.05), rotate_limit=(-5, 5)),
+                A.Affine(p=0.3, scale=(0.7, 1.3), translate_percent=(-0.1, 0.1)),
+                A.PiecewiseAffine(p=0.3, scale=(0.01, 0.01)),
+            ]),
+
+            # Crop
+            # A.OneOf([
+            #     # A.Crop(p=0.3, percent=(0.01, 0.05)),
+            #     A.CenterCrop(p=0.3, height=0.8*size[0], width=0.8*size[1]),
+            # ]),
+            A.Normalize(),
+            ToTensorV2(),
+        ])
+    
+    def __call__(self, img):
+        img = self.resize(img)
+        augmented = self.aug(image=img)
+        img = augmented['image']
+        return img
 
 # the fucking imgaug lib is dogshit -> np.bool decaped
 # class VietOCRAug(object):
