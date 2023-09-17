@@ -12,24 +12,37 @@ from lightning.pytorch.profilers import AdvancedProfiler
 from src.data.components.collator import Collator
 from src.models.tokenizer import Tokenizer
 from src.data.datamodule import OCRDataModule
-from src.utils.transforms import Resize, ToTensor, SwinAugmenter, DefaultAugmenter, AlbumentationsTransform
+from src.utils.transforms import Resize, ToTensor, SwinAugmenter, DefaultAugmenter, AlbumentationsTransform, AlbumentationsWithPadding
 from torchvision.transforms import Compose, RandomChoice, AugMix, AutoAugment
 
 if __name__ == '__main__':
     set_float32_matmul_precision('medium')
 
+    # cnn_args = {
+    #     'cnn_arch': 'vgg',
+    #     'weights': 'IMAGENET1K_V1',
+    #     'ss': [
+    #         [2, 2],
+    #         [2, 2],
+    #         [2, 1],
+    #         [2, 1],
+    #         [1, 1]
+    #     ],
+    #     'ks': [
+    #         [2, 2],
+    #         [2, 2],
+    #         [2, 1],
+    #         [2, 1],
+    #         [1, 1]
+    #     ],
+    #     'hidden': 256
+    # }
+
     cnn_args = {
-        'weights': 'IMAGENET1K_V1',
+        'cnn_arch': 'resnet50',
         'ss': [
             [2, 2],
-            [2, 2],
             [2, 1],
-            [2, 1],
-            [1, 1]
-        ],
-        'ks': [
-            [2, 2],
-            [2, 2],
             [2, 1],
             [2, 1],
             [1, 1]
@@ -46,8 +59,8 @@ if __name__ == '__main__':
     trans_args = {
         "d_model": 256,
         "nhead": 8,
-        "num_encoder_layers": 6,
-        "num_decoder_layers": 6,
+        "num_encoder_layers": 8,
+        "num_decoder_layers": 8,
         "dim_feedforward": 2048,
         "max_seq_length": 512,
         "pos_dropout": 0.2,
@@ -66,19 +79,20 @@ if __name__ == '__main__':
         'verbose': True,
     }
 
-    tokenizer = Tokenizer()
+    tokenizer = Tokenizer(trans_args['max_seq_length'])
     collator = Collator()
 
     # Augmenter = SwinAugmenter(swin_args['pretrained'])
-    Augmenter = AlbumentationsTransform((70, 140))
+    # Augmenter = AlbumentationsTransform((70, 140))
+    Augmenter = AlbumentationsWithPadding((224, 112))
 
     dataModule = OCRDataModule(
-        data_dir= './data/', map_file= 'train_line.txt',
+        data_dir= './data/', map_file= 'train_annotation.txt',
         test_dir= './data/new_public_test',
         tokenizer= tokenizer,
         train_val_split= [100_000, 3_000],
         batch_size= 64,
-        num_workers= 4,
+        num_workers= 6,
         pin_memory= True,
         transforms= Augmenter,
         collate_fn= collator,
@@ -87,7 +101,7 @@ if __name__ == '__main__':
 
     dataModule.setup()
 
-    net = Net(len(tokenizer.chars), 'vgg', cnn_args, trans_args)
+    net = Net(len(tokenizer.chars), 'cnn', cnn_args, trans_args)
 
     train_loader = dataModule.train_dataloader()
     val_loader = dataModule.val_dataloader()
@@ -105,10 +119,10 @@ if __name__ == '__main__':
                             example_input_array= next(iter(train_loader))
                         )
 
-    # tb_logger = loggers.TensorBoardLogger(save_dir= './log/', log_graph= True)
-    wandb_logger = loggers.WandbLogger(save_dir="./logs", project="Neuromancers-OCR")
+    logger = loggers.TensorBoardLogger(save_dir= './log/', log_graph= True)
+    # logger = loggers.WandbLogger(save_dir="./logs", project="Neuromancers-OCR")
     ckpt_callback = ModelCheckpoint(dirpath= './weights/', 
-                                    filename= 'vietocr_{epoch:02d}_{val_cer:0.2f}',
+                                    filename= 'vietocr_nopretrained_{epoch:02d}_{val_cer:0.2f}',
                                     monitor= 'val_cer', 
                                     save_on_train_epoch_end= True,
                                     save_top_k= 1
@@ -124,7 +138,7 @@ if __name__ == '__main__':
                     #   max_time= '00:00:02:00',
                       max_epochs= 25, 
                       benchmark= True,
-                      logger= wandb_logger,
+                      logger= logger,
                       profiler= profiler,
                       log_every_n_steps= 5,
                       check_val_every_n_epoch= 1,

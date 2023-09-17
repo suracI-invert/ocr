@@ -1,7 +1,9 @@
 from torch import tensor, is_tensor, int64, bool
 
 class Tokenizer():
-    def __init__(self):
+    def __init__(self, max_seq_length: int = 512):
+        self.max_seq_length = max_seq_length
+
         self.pad = 0
         self.go = 1
         self.eos = 2
@@ -16,11 +18,11 @@ class Tokenizer():
         self.i2c[2] = '</s>'
         self.i2c[3] = '*'
 
-    def encode(self, chars, padding: bool = False, max_length: int = 64, return_attn_mask= True, return_tensor: bool = False):
+    def encode(self, chars, padding: bool = False, return_attn_mask= True, return_tensor: bool = False):
         ids = [self.go] + [self.c2i[c] for c in chars] + [self.eos]
 
         if padding:
-            ids += [self.pad for _ in range(max_length - len(ids))]
+            ids += [self.pad for _ in range(self.max_seq_length - len(ids))]
 
         attn_mask = [False if i != 0 else True for i in ids]
 

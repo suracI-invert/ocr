@@ -10,7 +10,6 @@ from src.models.tokenizer import Tokenizer
 
 class OCRDataset(Dataset):
     def __init__(self, root_dir: str, map_file: str = None, test_data: bool = False, tokenizer: Tokenizer = None,
-                max_target_length: int = 128, 
                 transforms= None
             ):
 
@@ -31,8 +30,6 @@ class OCRDataset(Dataset):
                     self.labels.append(label)
     
         self.tokenizer = tokenizer
-        self.max_target_length = max_target_length
-
         self.transforms = transforms
 
 
@@ -61,7 +58,7 @@ class OCRDataset(Dataset):
             img = img.resize((70, 140))
             img = pil_to_tensor(img.convert('RGB'))
 
-        tokenized_labels = self.tokenizer.encode(self.labels[idx], padding= True, max_length= self.max_target_length, return_tensor= True)
+        tokenized_labels = self.tokenizer.encode(self.labels[idx], padding= True, return_tensor= True)
         
         return {
             'img': img,

@@ -3,7 +3,7 @@ from src.models.model import Net
 from src.models.tokenizer import Tokenizer
 from src.data.datamodule import OCRDataModule
 from src.data.components.collator import Collator
-from src.utils.transforms import Resize, ToTensor, SwinAugmenter
+from src.utils.transforms import Resize, ToTensor, SwinAugmenter, AlbumentationsWithPadding
 
 from torch import set_float32_matmul_precision
 from torchvision.transforms import Compose
@@ -14,22 +14,34 @@ from tqdm import tqdm
 
 if __name__ == '__main__':
     set_float32_matmul_precision('medium')
-    tokenizer = Tokenizer()
 
-    collator = Collator()
+    CKPT_PATH = './weights/simple_vietocr_epoch=19_val_cer=0.07.ckpt'
+
+    # cnn_args = {
+    #     'cnn_arch': 'vgg',
+    #     'weights': 'IMAGENET1K_V1',
+    #     'ss': [
+    #         [2, 2],
+    #         [2, 2],
+    #         [2, 1],
+    #         [2, 1],
+    #         [1, 1]
+    #     ],
+    #     'ks': [
+    #         [2, 2],
+    #         [2, 2],
+    #         [2, 1],
+    #         [2, 1],
+    #         [1, 1]
+    #     ],
+    #     'hidden': 256
+    # }
 
     cnn_args = {
-        'weights': 'IMAGENET1K_V1',
+        'cnn_arch': 'resnet50',
         'ss': [
             [2, 2],
-            [2, 2],
             [2, 1],
-            [2, 1],
-            [1, 1]
-        ],
-        'ks': [
-            [2, 2],
-            [2, 2],
             [2, 1],
             [2, 1],
             [1, 1]
@@ -55,6 +67,10 @@ if __name__ == '__main__':
         "trans_dropout": 0.1
     }
 
+    tokenizer = Tokenizer(trans_args['max_seq_length'])
+
+    collator = Collator()
+
     dataModule = OCRDataModule(
         data_dir= './data/', map_file= 'train_annotation.txt',
         test_dir= './data/new_public_test',
@@ -63,7 +79,7 @@ if __name__ == '__main__':
         batch_size= 64,
         num_workers= 6,
         pin_memory= True,
-        transforms= SwinAugmenter(swin_args['pretrained']),
+        transforms= AlbumentationsWithPadding((224, 112)),
         collate_fn= collator,
         sampler= None
     )
@@ -72,10 +88,10 @@ if __name__ == '__main__':
 
     test_loader = dataModule.test_dataloader()
 
-    net = Net(len(tokenizer.chars), 'swin', swin_args, trans_args)
+    net = Net(len(tokenizer.chars), 'cnn', cnn_args, trans_args)
 
     model = OCRLitModule.load_from_checkpoint(net= net, tokenizer= tokenizer,
-        checkpoint_path= './weights/simple_vietocr_epoch=19_val_cer=0.07.ckpt',
+        checkpoint_path= CKPT_PATH,
     )
 
     trainer = Trainer(
