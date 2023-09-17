@@ -15,7 +15,7 @@ class Net(nn.Module):
             - transformer_args: arguments dict for transformer module
         """
         super().__init__()
-        if backbone == 'vgg':
+        if backbone == 'cnn':
             self.backbone = CNN(**backbone_args)
         elif backbone == 'swin':
             self.backbone = SwinTransformer(**backbone_args)
