@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image, ImageOps
 from torch import tensor, float32, Tensor, uint8
 from torchvision.transforms import Compose, RandomApply, RandomChoice, RandomOrder, AutoAugment, AugMix, Normalize
-from transformers import AutoImageProcessor
+from transformers import AutoImageProcessor, ViTFeatureExtractor
 # import imgaug as ia
 # import imgaug.augmenters as iaa
 from random import sample
@@ -97,10 +97,17 @@ class SwinAugmenter(object):
             if "shortest_edge" in image_processor.size
             else (image_processor.size["height"], image_processor.size["width"])
         )
-        self.aug = Compose([Resize(size[0], size[1]), ToTensor(), Normalize(mean=image_processor.image_mean, std=image_processor.image_std)])
+        self.aug = Compose([Resize((size[0], size[1])), ToTensor(), Normalize(mean=image_processor.image_mean, std=image_processor.image_std)])
     
     def __call__(self, img: Image.Image) -> Tensor:
         return self.aug(img)
+    
+class VITAugmenter(object):
+    def __init__(self, pretrained= 'google/vit-base-patch32-384') -> None:
+        self.feature_extractor = ViTFeatureExtractor.from_pretrained(pretrained)
+
+    def __call__(self, img: Image.Image) -> Tensor:
+        return self.feature_extractor(img, return_tensors= 'pt')['pixel_values'][0]
     
 class AlbumentationsWithPadding(object):
     def __init__(self, size: Tuple[int, int]):

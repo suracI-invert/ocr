@@ -4,13 +4,15 @@ from src.models.components.vgg import Vgg
 from src.models.components.resnet import Resnet50
 
 class CNN(nn.Module):
-    def __init__(self, cnn_arch, **kwargs):
+    def __init__(self, arch, **kwargs):
         super(CNN, self).__init__()
 
-        if cnn_arch == 'vgg':
+        if arch == 'vgg':
             self.model = Vgg(**kwargs)
-        elif cnn_arch == 'resnet50':
+        elif arch == 'resnet50':
             self.model = Resnet50(**kwargs)
+        else:
+            raise('Not supported cnn backbone')
 
     def forward(self, x):
         return self.model(x)

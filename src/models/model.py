@@ -1,5 +1,5 @@
 from src.models.components.cnn import CNN
-from src.models.components.swin import SwinTransformer
+from src.models.components.vits import VisionTransformer
 from src.models.components.transformer import Transformer
 from torch import nn, no_grad, tensor, int64, topk, sum, any, all, zeros, ones, rand
 from torch.nn.functional import softmax
@@ -17,8 +17,8 @@ class Net(nn.Module):
         super().__init__()
         if backbone == 'cnn':
             self.backbone = CNN(**backbone_args)
-        elif backbone == 'swin':
-            self.backbone = SwinTransformer(**backbone_args)
+        elif backbone == 'transformers':
+            self.backbone = VisionTransformer(**backbone_args)
         else:
             raise('Not implemented vision backbone model')
         self.transformer = Transformer(vocab_size, **transformer_args)
@@ -32,9 +32,7 @@ class Net(nn.Module):
             - tgt_key_padding_mask: (B, T)
             -> output: (B, T, V)
         """
-
         src = self.backbone(img)
-
         return self.transformer(src, tgt_input, tgt_key_padding_mask= tgt_key_padding_mask)
     
     def predict(self, img, max_seq_length= 128):

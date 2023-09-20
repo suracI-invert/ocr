@@ -15,7 +15,7 @@ from tqdm import tqdm
 if __name__ == '__main__':
     set_float32_matmul_precision('medium')
 
-    CKPT_PATH = './weights/simple_vietocr_epoch=19_val_cer=0.07.ckpt'
+    CKPT_PATH = './weights/vietocr_resnet_epoch=06_val_cer=0.13.ckpt'
 
     # cnn_args = {
     #     'cnn_arch': 'vgg',

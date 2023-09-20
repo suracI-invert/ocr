@@ -22,7 +22,7 @@ class OCRDataModule(LightningDataModule):
             ) -> None:
         super().__init__()
 
-        self.save_hyperparameters(logger= True, ignore= ['tokenizer'])
+        self.save_hyperparameters(logger= False, ignore= ['tokenizer'])
         self.tokenizer = tokenizer
         self.prepare_data_per_node = False
 
