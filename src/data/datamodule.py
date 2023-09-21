@@ -1,13 +1,11 @@
 from typing import Any, Dict, Optional, Tuple
 
 from lightning import LightningDataModule
-from torch.utils.data import Dataset, random_split, DataLoader
-from torch import Generator
+from torch.utils.data import Dataset, DataLoader
 
 from src.data.components.datasets import OCRDataset
 from src.models.tokenizer import Tokenizer
 
-from os.path import join
 from sklearn.model_selection import train_test_split
 
 class OCRDataModule(LightningDataModule):
@@ -37,13 +35,19 @@ class OCRDataModule(LightningDataModule):
         self.data_test: Optional[Dataset] = None
 
         self.mapping = []
-        with open(join(data_dir, map_file), encoding= 'utf8') as f:
+        with open(map_file, encoding= 'utf8') as f:
             for l in f.readlines():
                 path, label = l.strip().split()
                 self.mapping.append((path, label))
 
         self.setup_called = False
 
+    @property
+    def num_classes(self) -> int:
+        pass
+
+    def prepare_data(self) -> None:
+        pass
 
     def setup(self, stage: Optional[str] = None) -> None:
         if not self.setup_called:

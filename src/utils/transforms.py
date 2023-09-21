@@ -10,6 +10,7 @@ from transformers import AutoImageProcessor, ViTFeatureExtractor
 from random import sample
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
+import cv2
 
 def resize_variable_size(w, h, expected_h, min_w, max_w):
     new_w = int(expected_h * float(w) / float(h))
@@ -21,18 +22,30 @@ def resize_variable_size(w, h, expected_h, min_w, max_w):
     return new_w, expected_h
 
 class VariableResize(object):
-    def __init__(self, expected_h: int = 70, min_w: int = 100, max_w: int = 300):
+    def __init__(self, expected_h: int = 70, min_w: int = 100, max_w: int = 300, convert= True):
         self.expected_h = expected_h
         self.min_w = min_w
         self.max_w = max_w
+        self.convert = convert
     
     def __call__(self, img: Image.Image) -> np.ndarray:
         w, h = img.size
-        img = img.convert('RGB')
         new_w, new_h = resize_variable_size(w, h, self.expected_h, self.min_w, self.max_w)
         img = img.resize((new_w, new_h), Image.ANTIALIAS)
+        if self.convert:
+            return np.asarray(img.convert('L'))
         img = np.asarray(img)
         return img
+    
+class Binarize(object):
+    def __init__(self, ksize: Tuple[int, int] = (3, 3), sigmax: float = 0):
+        self.ksize = ksize
+        self.sigmax = sigmax
+
+    def __call__(self, img: np.ndarray) -> np.ndarray:
+        img = cv2.GaussianBlur(img, self.ksize, self.sigmax)
+        img = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY_INV|cv2.THRESH_OTSU)[1]
+        return np.dstack((img[..., np.newaxis], img[..., np.newaxis], img[..., np.newaxis]))
 
 class Resize(object):
     def __init__(self, size):
@@ -249,5 +262,12 @@ class AlbumentationsTransform(object):
         return img
 
 class VarialeSizeAugmenter(object):
-    def __init__(self):
-        self.aug = Compose([])
+    def __init__(self, h, min_w, max_w, ksize: Tuple[int, int] = (3, 3), sigmax: float = 0, convert= True):
+        self.aug = Compose([
+            VariableResize(h, min_w, max_w, convert),
+            Binarize(ksize, sigmax),
+            ToTensor(),
+        ])
+
+    def __call__(self, img: Image.Image) -> Tensor:
+        return self.aug(img)

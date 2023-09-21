@@ -26,7 +26,8 @@ class VariableSizeSampler(Sampler):
             batch_lists.append(batches)
         
         lst = [item for sublist in batch_lists for item in sublist]
-        random.shuffle(lst)
+        if self.shuffle:
+            random.shuffle(lst)
         lst = [item for sublist in lst for item in sublist]
         return iter(lst)
         

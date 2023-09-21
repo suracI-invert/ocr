@@ -5,7 +5,7 @@ from torchvision import models
 class Vgg(nn.Module):
     def __init__(self, ss, ks, hidden, weights= None, dropout= 0.5):
         super().__init__()
-
+        
         cnn = models.vgg19_bn(weights)
         pool_idx = 0
 

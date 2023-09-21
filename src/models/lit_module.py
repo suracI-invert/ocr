@@ -17,11 +17,9 @@ class OCRLitModule(LightningModule):
         scheduler: torch.optim.lr_scheduler = None,
         optimizer_params: Dict[str, Any] = {},
         scheduler_params: Dict[str, Any] = {},
-        learning_rate: float = 0.1,
         monitor_metric: str = 'val_loss',
         interval: str = 'epoch',
         frequency: int = 5,
-        example_input_array = None
     ) -> None:
         """
         Note:
@@ -42,11 +40,6 @@ class OCRLitModule(LightningModule):
 
         self.val_cer_best = MinMetric()
 
-        self.example_input_array = (
-            example_input_array['img'],
-            example_input_array['tgt_input'],
-            example_input_array['tgt_padding_mask']
-        ) if example_input_array else None
 
     def forward(self, img: torch.Tensor, tgt_input: torch.Tensor, tgt_padding_mask: torch.Tensor) -> torch.Tensor:
         return self.net(img, tgt_input, tgt_padding_mask)
@@ -56,11 +49,7 @@ class OCRLitModule(LightningModule):
         self.val_cer.reset()
         self.val_cer_best.reset()
 
-        if self.logger.log_dir:
-            print(f'\nLogs saved at {self.logger.log_dir}')
 
-        if self.example_input_array:
-            self.logger.log_graph(self)
     
     def model_step(self, batch: Dict[str, torch.Tensor]) -> torch.Tensor:
         img, tgt_input, tgt_padding_mask, tgt_output = batch['img'], batch['tgt_input'], batch['tgt_padding_mask'], batch['tgt_output']
@@ -120,7 +109,7 @@ class OCRLitModule(LightningModule):
         return res
 
     def configure_optimizers(self) -> Dict[str, Any]:
-        optimizer = self.hparams.optimizer(params= self.parameters(), lr= self.hparams.learning_rate, **self.hparams.optimizer_params)
+        optimizer = self.hparams.optimizer(params= self.parameters(), **self.hparams.optimizer_params)
         if self.hparams.scheduler is not None:
             scheduler = self.hparams.scheduler(optimizer= optimizer, **self.hparams.scheduler_params)
             return {

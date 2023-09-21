@@ -1,0 +1,6 @@
+backbone:
+  type: transformers
+  arch: vit
+  hidden: 256
+  dropout: 0.2
+  pretrained: google/vit-base-patch16-224
