@@ -7,12 +7,18 @@ from torch import Generator
 from src.data.components.datasets import OCRDataset
 from src.models.tokenizer import Tokenizer
 
+from os.path import join
+from sklearn.model_selection import train_test_split
+
 class OCRDataModule(LightningDataModule):
     def __init__(self, data_dir: str,
                 map_file: str,
                 tokenizer: Tokenizer,
                 test_dir: str = None,
                 train_val_split: Tuple[int, int] = None,
+                h: int = 70,
+                min_w: int = 100,
+                max_w: int = 300,
                 batch_size: int = 1,
                 num_workers: int = 0,
                 pin_memory: bool = False,
@@ -30,29 +36,35 @@ class OCRDataModule(LightningDataModule):
         self.data_valid: Optional[Dataset] = None
         self.data_test: Optional[Dataset] = None
 
+        self.mapping = []
+        with open(join(data_dir, map_file), encoding= 'utf8') as f:
+            for l in f.readlines():
+                path, label = l.strip().split()
+                self.mapping.append((path, label))
+
         self.setup_called = False
 
-    @property
-    def num_classes(self) -> int:
-        pass
-
-    def prepare_data(self) -> None:
-        pass
 
     def setup(self, stage: Optional[str] = None) -> None:
         if not self.setup_called:
             self.setup_called = True
-            dataset = OCRDataset(self.hparams.data_dir,map_file= self.hparams.map_file,
-                                 tokenizer= self.tokenizer, transforms= self.hparams.transforms
-                                )
+
             if not self.hparams.train_val_split:
-                self.data_train = dataset
+                self.data_train = OCRDataset(self.hparams.data_dir,
+                                             self.mapping, h= self.hparams.h, min_w= self.hparams.min_w, max_w= self.hparams.max_w,
+                                             tokenizer= self.tokenizer, transforms= self.hparams.transforms)
             else:
-                self.data_train, self.data_valid = random_split(
-                    dataset= dataset,
-                    lengths= self.hparams.train_val_split,
-                    generator= Generator().manual_seed(42)
-                )
+                train_mapping, val_mapping = train_test_split(self.mapping, 
+                                                            train_size= self.hparams.train_val_split[0],
+                                                            test_size= self.hparams.train_val_split[1],
+                                                            random_state= 42)
+                self.data_train = OCRDataset(self.hparams.data_dir,
+                                             train_mapping, h= self.hparams.h, min_w= self.hparams.min_w, max_w= self.hparams.max_w,
+                                             tokenizer= self.tokenizer, transforms= self.hparams.transforms)
+                self.data_valid = OCRDataset(self.hparams.data_dir,
+                                             val_mapping, h= self.hparams.h, min_w= self.hparams.min_w, max_w= self.hparams.max_w,
+                                             tokenizer= self.tokenizer, transforms= self.hparams.transforms)
+
             if self.hparams.test_dir and not self.data_test:
                 self.data_test = OCRDataset(self.hparams.test_dir, test_data= True, transforms= self.hparams.transforms)
 
@@ -62,9 +74,8 @@ class OCRDataModule(LightningDataModule):
             batch_size= self.hparams.batch_size,
             num_workers= self.hparams.num_workers,
             collate_fn= self.hparams.collate_fn,
-            sampler= self.hparams.sampler,
+            sampler= self.hparams.sampler(self.data_train, self.hparams.batch_size, True),
             pin_memory= self.hparams.pin_memory,
-            shuffle= True
         )
     
     def val_dataloader(self) -> DataLoader:
@@ -73,18 +84,16 @@ class OCRDataModule(LightningDataModule):
             batch_size= self.hparams.batch_size,
             num_workers= self.hparams.num_workers,
             collate_fn= self.hparams.collate_fn,
-            sampler= self.hparams.sampler,
+            sampler= self.hparams.sampler(self.data_valid, self.hparams.batch_size),
             pin_memory= self.hparams.pin_memory,
-            shuffle= False
         )
     
     def test_dataloader(self) -> DataLoader:
         return DataLoader(
             dataset= self.data_test,
-            batch_size= self.hparams.batch_size,
+            batch_size= 1,
             num_workers= self.hparams.num_workers,
             pin_memory= self.hparams.pin_memory,
-            shuffle= False
         )
     
     def teardown(self, stage: Optional[str] = None) -> None:

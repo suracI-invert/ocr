@@ -14,7 +14,7 @@ class OCRLitModule(LightningModule):
         net: torch.nn.Module,
         tokenizer: Tokenizer,
         optimizer: torch.optim.Optimizer,
-        scheduler: torch.optim.lr_scheduler,
+        scheduler: torch.optim.lr_scheduler = None,
         optimizer_params: Dict[str, Any] = {},
         scheduler_params: Dict[str, Any] = {},
         learning_rate: float = 0.1,
