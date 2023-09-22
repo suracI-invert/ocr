@@ -24,7 +24,7 @@ if __name__ == '__main__':
     collator = Collator()
     Augmenter = get_augmenter(cfg)
     sampler = VariableSizeSampler if cfg['backbone']['type'] == 'cnn' else None
-    # Sampler (with convert True alledgely) introduct error while training/ might need further changes or revert back to fixed resize
+    # Sampler (with convert True alledgely) introduce error while training/ might need further changes or revert back to fixed resize
 
     dataModule = OCRDataModule(
         data_dir= cfg['data']['data_dir'],
