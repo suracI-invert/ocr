@@ -26,7 +26,7 @@ backbone:
   type: cnn
   arg:
     arch: efficientnet
-    ver: b7
+    ver: b1
     hidden: 256
     pretrained: True
     dropout: 0.2
@@ -36,8 +36,8 @@ data:
   map_file: ./data/train_gt.txt
   test_dir: ./data/new_public_test
   train_val_split:
-    - 10_000
-    - 93_000 
+    - 100_000
+    - 3_000 
   batch_size: 16
   num_workers: 4
   pin_memory: True
@@ -62,16 +62,16 @@ scheduler:
     interval: epoch
     frequency: 2
 
-logger:
-  type: tensorboard
-  save_dir: log
-
 # logger:
-#   type: wandb
+#   type: tensorboard
 #   save_dir: log
-#   project: bkai-ocr
-#   log_model: True
-#   watch: True
+
+logger:
+  type: wandb
+  save_dir: log
+  project: bkai-ocr
+  log_model: True
+  watch: True
 
 checkpoint:
   dirpath: weights

@@ -3,7 +3,7 @@ from src.models.model import Net
 from src.models.tokenizer import Tokenizer
 from src.data.datamodule import OCRDataModule
 from src.data.components.collator import Collator
-from src.utils.transforms import Resize, ToTensor, SwinAugmenter, AlbumentationsWithPadding
+from src.utils.transforms import Resize, ToTensor, SwinAugmenter, AlbumentationsWithPadding, VITAugmenter
 
 from torch import set_float32_matmul_precision
 from torchvision.transforms import Compose
@@ -15,7 +15,7 @@ from tqdm import tqdm
 if __name__ == '__main__':
     set_float32_matmul_precision('medium')
 
-    CKPT_PATH = './weights/vietocr_resnet_epoch=06_val_cer=0.13.ckpt'
+    CKPT_PATH = './weights/vietocr_resnet_epoch=23_val_cer=0.31.ckpt'
 
     # cnn_args = {
     #     'cnn_arch': 'vgg',
@@ -50,7 +50,8 @@ if __name__ == '__main__':
     }
 
     
-    swin_args = {
+    vit_args = {
+        'arch': 'swin',
         'hidden': 256,
         'dropout': 0.2,
         'pretrained': 'microsoft/swin-tiny-patch4-window7-224'
@@ -72,14 +73,14 @@ if __name__ == '__main__':
     collator = Collator()
 
     dataModule = OCRDataModule(
-        data_dir= './data/', map_file= 'train_annotation.txt',
+        data_dir= './data/', map_file= 'train_line.txt',
         test_dir= './data/new_public_test',
         tokenizer= tokenizer,
         train_val_split= [100_000, 3_000],
         batch_size= 64,
         num_workers= 6,
         pin_memory= True,
-        transforms= AlbumentationsWithPadding((224, 112)),
+        transforms= VITAugmenter(),
         collate_fn= collator,
         sampler= None
     )
@@ -88,7 +89,7 @@ if __name__ == '__main__':
 
     test_loader = dataModule.test_dataloader()
 
-    net = Net(len(tokenizer.chars), 'cnn', cnn_args, trans_args)
+    net = Net(len(tokenizer.chars), 'transformers', vit_args, trans_args)
 
     model = OCRLitModule.load_from_checkpoint(net= net, tokenizer= tokenizer,
         checkpoint_path= CKPT_PATH,

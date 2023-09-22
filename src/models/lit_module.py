@@ -70,9 +70,6 @@ class OCRLitModule(LightningModule):
 
         return loss
 
-    def on_validation_start(self) -> None:
-        print('validating')  
-
     def validation_step(self, batch: Dict[str, torch.Tensor], batch_idx: int) -> torch.Tensor:
         loss = self.model_step(batch)
         pred_ids, prob = self.net.predict(batch['img'])
