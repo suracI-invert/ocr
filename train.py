@@ -9,9 +9,9 @@ from src.utils.config import Config
 from src.utils.callbacks import get_callbacks
 from src.utils.logger import get_logger
 from src.utils.profiler import get_profiler
+from src.utils.optim import get_lr_scheduler, get_optimizer
 
 from torch import set_float32_matmul_precision
-from torch.optim import AdamW
 
 from lightning import Trainer
 
@@ -52,11 +52,18 @@ if __name__ == '__main__':
 
     net = Net(len(tokenizer.chars), cfg['backbone']['type'], cfg['backbone']['arg'], cfg['transformer'])
 
+    lr_scheduler = get_lr_scheduler(cfg)
+    optimizer = get_optimizer(cfg)
+
     OCRModel = OCRLitModule(
         net, tokenizer,
-        AdamW,
-        optimizer_params= cfg['optimizer']
+        optimizer= optimizer['optimizer'],
+        optimizer_params= optimizer['args'],
+        scheduler= lr_scheduler['lr_scheduler'],
+        scheduler_params= lr_scheduler['args'],
+        extra_scheduler_params= lr_scheduler['extra_args']
     )
+
     callbacks = get_callbacks(cfg)
     logger = get_logger(cfg)
     profiler = get_profiler(cfg)

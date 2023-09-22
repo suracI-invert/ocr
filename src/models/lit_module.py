@@ -17,9 +17,7 @@ class OCRLitModule(LightningModule):
         scheduler: torch.optim.lr_scheduler = None,
         optimizer_params: Dict[str, Any] = {},
         scheduler_params: Dict[str, Any] = {},
-        monitor_metric: str = 'val_loss',
-        interval: str = 'epoch',
-        frequency: int = 5,
+        extra_scheduler_params: Dict[str, Any] = {},
     ) -> None:
         """
         Note:
@@ -114,9 +112,7 @@ class OCRLitModule(LightningModule):
                 'optimizer': optimizer,
                 'lr_scheduler': {
                     'scheduler': scheduler,
-                    'monitor': self.hparams.monitor_metric,
-                    'interval': self.hparams.interval,
-                    'frequency': self.hparams.frequency
+                    **self.hparams.extra_scheduler_params
                 }
             }
         return {'optimizer': optimizer}

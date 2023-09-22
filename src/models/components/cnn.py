@@ -40,39 +40,46 @@ class EfficentNet(nn.Module):
         if ver == 'b0':
             weights = models.EfficientNet_B0_Weights if pretrained else None
             model = models.efficientnet_b0(weights)
+            out_dim = 1280
         elif ver == 'b1':
             weights = models.EfficientNet_B1_Weights if pretrained else None
             model = models.efficientnet_b1(weights)
+            out_dim = 1280
         elif ver == 'b2':
             weights = models.EfficientNet_B2_Weights if pretrained else None
             model = models.efficientnet_b2(weights)
+            out_dim = 1408
         elif ver == 'b3':
             weights = models.EfficientNet_B3_Weights if pretrained else None
             model = models.efficientnet_b3(weights)
+            out_dim = 1536
         elif ver == 'b4':
             weights = models.EfficientNet_B4_Weights if pretrained else None
             model = models.efficientnet_b4(weights)
+            out_dim = 1792
         elif ver == 'b5':
             weights = models.EfficientNet_B5_Weights if pretrained else None
             model = models.efficientnet_b5(weights)
+            out_dim = 2048
         elif ver == 'b6':
             weights = models.EfficientNet_B6_Weights if pretrained else None
             model = models.efficientnet_b6(weights)
+            out_dim = 2304
         elif ver == 'b7':
             weights = models.EfficientNet_B7_Weights if pretrained else None
             model = models.efficientnet_b7(weights)
+            out_dim = 2560
         else:
             raise('backbone not found')
         
         self.features = model.features
         self.avgpool = model.avgpool
-        self.last_layer = nn.Sequential([
-            nn.Conv2d(1280, 512, 1),
-            nn.BatchNorm2d(512, eps= 1e-05, momentum= 0.1, affine= True, track_running_stats= True),
+        self.last_layer = nn.Sequential(
+            nn.Conv2d(out_dim, 512, 1),
             nn.SiLU(),
             nn.Dropout(dropout),
             nn.Conv2d(512, hidden, 1),
-        ])
+        )
 
     def forward(self, x):
         x = self.features(x)
