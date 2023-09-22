@@ -1,33 +1,24 @@
-from torch.utils.data import Sampler
+from torch.utils.data import BatchSampler
 import random
 
-from collections import defaultdict
-
-class VariableSizeSampler(Sampler):
+class VariableSizeSampler(object):
     def __init__(self, data_src, batch_size, shuffle= False):
-        self.data = data_src.bucket
-        self._len = len(data_src)
-        self.batch_size = batch_size
-        self.shuffle = shuffle
-    
-    def __len__(self):
-        return self._len
-
-    def __iter__(self):
         batch_lists = []
-        for bucket, blucket_ids in self.data.items():
-            if self.shuffle:
+        for bucket, blucket_ids in data_src.bucket.items():
+            if shuffle:
                 random.shuffle(blucket_ids)
-
-            batches = [blucket_ids[i:i + self.batch_size] for i in range(0, len(blucket_ids), self.batch_size)]
-            batches = [_ for _ in batches if len(_) == self.batch_size]
-            if self.shuffle:
+            batches = [blucket_ids[i:i + batch_size] for i in range(0, len(blucket_ids), batch_size)]
+            if shuffle:
                 random.shuffle(batches)
             batch_lists.append(batches)
         
-        lst = [item for sublist in batch_lists for item in sublist]
-        if self.shuffle:
-            random.shuffle(lst)
-        lst = [item for sublist in lst for item in sublist]
-        yield from iter(lst)
+        self.lst = [item for sublist in batch_lists for item in sublist]
+        if shuffle:
+            random.shuffle(self.lst)
+    
+    def __len__(self):
+        return len(self.lst)
+
+    def __iter__(self):
+        return iter(self.lst)
         

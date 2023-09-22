@@ -3,9 +3,9 @@ from torch import nn
 from torchvision import models
 
 class Vgg(nn.Module):
-    def __init__(self, ss, ks, hidden, weights= None, dropout= 0.5):
+    def __init__(self, ss, ks, hidden, pretrained: False, dropout= 0.5):
         super().__init__()
-        
+        weights = models.VGG19_BN_Weights if pretrained else None
         cnn = models.vgg19_bn(weights)
         pool_idx = 0
 
@@ -34,10 +34,55 @@ class Vgg(nn.Module):
         return conv
     
 class EfficentNet(nn.Module):
-    def __init__(self, type= 'b0', hidden= 256, weights= None, dropout= 0.1):
+    def __init__(self, ver= 'b0', hidden= 256, pretrained= False, dropout= 0.1):
         super().__init__()
 
-        #TODO: change ss/ks of pooling layer?
+        if ver == 'b0':
+            weights = models.EfficientNet_B0_Weights if pretrained else None
+            model = models.efficientnet_b0(weights)
+        elif ver == 'b1':
+            weights = models.EfficientNet_B1_Weights if pretrained else None
+            model = models.efficientnet_b1(weights)
+        elif ver == 'b2':
+            weights = models.EfficientNet_B2_Weights if pretrained else None
+            model = models.efficientnet_b2(weights)
+        elif ver == 'b3':
+            weights = models.EfficientNet_B3_Weights if pretrained else None
+            model = models.efficientnet_b3(weights)
+        elif ver == 'b4':
+            weights = models.EfficientNet_B4_Weights if pretrained else None
+            model = models.efficientnet_b4(weights)
+        elif ver == 'b5':
+            weights = models.EfficientNet_B5_Weights if pretrained else None
+            model = models.efficientnet_b5(weights)
+        elif ver == 'b6':
+            weights = models.EfficientNet_B6_Weights if pretrained else None
+            model = models.efficientnet_b6(weights)
+        elif ver == 'b7':
+            weights = models.EfficientNet_B7_Weights if pretrained else None
+            model = models.efficientnet_b7(weights)
+        else:
+            raise('backbone not found')
+        
+        self.features = model.features
+        self.avgpool = model.avgpool
+        self.last_layer = nn.Sequential([
+            nn.Conv2d(1280, 512, 1),
+            nn.BatchNorm2d(512, eps= 1e-05, momentum= 0.1, affine= True, track_running_stats= True),
+            nn.SiLU(),
+            nn.Dropout(dropout),
+            nn.Conv2d(512, hidden, 1),
+        ])
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.avgpool(x)
+        x = self.last_layer(x)
+
+        x = x.transpose(-1, -1)
+        x = x.flatten(2)
+        x = x.permute(-1, 0, 1)
+        return x
 
 class BasicBlock(nn.Module):
     expansion = 1
@@ -184,6 +229,8 @@ class CNN(nn.Module):
             self.model = Vgg(**kwargs)
         elif arch == 'resnet50':
             self.model = Resnet50(**kwargs)
+        elif arch == 'efficientnet':
+            self.model = EfficentNet(**kwargs)
         else:
             raise('Not supported cnn backbone')
 

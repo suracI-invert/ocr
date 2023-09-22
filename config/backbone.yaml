@@ -4,3 +4,26 @@ backbone:
   hidden: 256
   dropout: 0.2
   pretrained: google/vit-base-patch16-224
+
+backbone:
+  type: transformers
+  arch: swin
+  hidden: 256
+  dropout: 0.2
+  pretrained: microsoft/swin-base-patch4-window7-224-in22k
+
+backbone:
+  type: cnn
+  arg:
+    arch: resnet50
+    ss: ~
+    hidden: 256
+
+backbone:
+  type: cnn
+  arg:
+    arch: efficientnet
+    ver: b7
+    hidden: 256
+    pretrained: True
+    dropout: 0.2

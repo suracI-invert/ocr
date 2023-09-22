@@ -26,7 +26,7 @@ backbone:
   type: cnn
   arg:
     arch: vgg
-    weights: IMAGENET1K_V1
+    pretrained: True
     ss:
       - [2, 2]
       - [2, 2]
@@ -42,6 +42,7 @@ backbone:
       - [2, 1]
       - [1, 1]
     hidden: 256
+    dropout: 0.2
 
 data:
   data_dir: ./data/new_train
@@ -50,7 +51,7 @@ data:
   train_val_split:
     - 100_000
     - 3_000 
-  batch_size: 64
+  batch_size: 16
   num_workers: 4
   pin_memory: True
 
@@ -59,16 +60,16 @@ optimizer:
   eps: 0.00000001
   weight_decay: 0.1
 
-logger:
-  type: tensorboard
-  save_dir: log
-
 # logger:
-#   type: wandb
+#   type: tensorboard
 #   save_dir: log
-#   project: bkai-ocr
-#   log_model: True
-#   watch: True
+
+logger:
+  type: wandb
+  save_dir: log
+  project: bkai-ocr
+  log_model: True
+  watch: True
 
 checkpoint:
   dirpath: weights

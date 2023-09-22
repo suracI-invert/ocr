@@ -29,7 +29,8 @@ if __name__ == '__main__':
                                      cfg['transform']['sigmax'],
                                      cfg['transform']['convert']
                                     )
-    
+    sampler = VariableSizeSampler if cfg['backbone']['type'] == 'cnn' else None
+
     dataModule = OCRDataModule(
         data_dir= cfg['data']['data_dir'],
         map_file= cfg['data']['map_file'],
@@ -41,7 +42,7 @@ if __name__ == '__main__':
         pin_memory= cfg['data']['pin_memory'],
         transforms= Augmenter,
         collate_fn= collator,
-        sampler= VariableSizeSampler,
+        sampler= sampler,
         h= cfg['transform']['h'],
         min_w= cfg['transform']['min_w'],
         max_w= cfg['transform']['max_w']
@@ -76,4 +77,4 @@ if __name__ == '__main__':
         profiler= profiler
     )
 
-    trainer.fit(OCRModel, datamodule= dataModule)
+    trainer.fit(OCRModel, train_dataloaders= dataModule.train_dataloader(), val_dataloaders= dataModule.val_dataloader())
