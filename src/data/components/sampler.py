@@ -29,5 +29,5 @@ class VariableSizeSampler(Sampler):
         if self.shuffle:
             random.shuffle(lst)
         lst = [item for sublist in lst for item in sublist]
-        return iter(lst)
+        yield from iter(lst)
         

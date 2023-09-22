@@ -49,7 +49,7 @@ data:
   test_dir: ./data/new_public_test
   train_val_split:
     - 100_000
-    - 3_000
+    - 3_000 
   batch_size: 64
   num_workers: 4
   pin_memory: True
@@ -59,16 +59,16 @@ optimizer:
   eps: 0.00000001
   weight_decay: 0.1
 
-# logger:
-#   type: tensorboard
-#   save_dir: ./log
-
 logger:
-  type: wandb
+  type: tensorboard
   save_dir: log
-  project: bkai-ocr
-  log_model: True
-  watch: True
+
+# logger:
+#   type: wandb
+#   save_dir: log
+#   project: bkai-ocr
+#   log_model: True
+#   watch: True
 
 checkpoint:
   dirpath: weights
@@ -79,7 +79,7 @@ checkpoint:
 
 early_stopping:
   monitor: val_cer
-  min_delta: 0.0001
+  min_delta: 0.001
   patience: 2
   mode: min
 

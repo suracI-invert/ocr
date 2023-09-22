@@ -70,7 +70,9 @@ class OCRDataModule(LightningDataModule):
                                              tokenizer= self.tokenizer, transforms= self.hparams.transforms)
 
             if self.hparams.test_dir and not self.data_test:
-                self.data_test = OCRDataset(self.hparams.test_dir, test_data= True, transforms= self.hparams.transforms)
+                self.data_test = OCRDataset(self.hparams.test_dir, test_data= True, 
+                                            h= self.hparams.h, min_w= self.hparams.min_w, max_w= self.hparams.max_w, 
+                                            transforms= self.hparams.transforms)
 
     def train_dataloader(self) -> DataLoader:
         return DataLoader(
@@ -80,15 +82,15 @@ class OCRDataModule(LightningDataModule):
             collate_fn= self.hparams.collate_fn,
             sampler= self.hparams.sampler(self.data_train, self.hparams.batch_size, True),
             pin_memory= self.hparams.pin_memory,
+            drop_last= True
         )
     
     def val_dataloader(self) -> DataLoader:
         return DataLoader(
             dataset= self.data_valid,
-            batch_size= self.hparams.batch_size,
+            batch_size= 1,
             num_workers= self.hparams.num_workers,
             collate_fn= self.hparams.collate_fn,
-            sampler= self.hparams.sampler(self.data_valid, self.hparams.batch_size),
             pin_memory= self.hparams.pin_memory,
         )
     

@@ -71,11 +71,9 @@ class OCRLitModule(LightningModule):
         self.log('train_loss', self.train_loss, on_step= True, prog_bar= True)
 
         return loss
-    
-    # def on_train_epoch_end(self) -> None:
-    #     for name, params in self.named_parameters():
-    #         self.logger.experiment.add_histogram(name, params, self.current_epoch)
 
+    def on_validation_start(self) -> None:
+        print('validating')  
 
     def validation_step(self, batch: Dict[str, torch.Tensor], batch_idx: int) -> torch.Tensor:
         loss = self.model_step(batch)
