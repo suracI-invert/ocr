@@ -4,7 +4,7 @@ from src.models.tokenizer import Tokenizer
 from src.data.datamodule import OCRDataModule
 from src.data.components.collator import Collator
 from src.data.components.sampler import VariableSizeSampler
-from src.utils.transforms import VarialeSizeAugmenter
+from src.utils.transforms import get_augmenter
 from src.utils.config import Config
 from src.utils.callbacks import get_callbacks
 from src.utils.logger import get_logger
@@ -22,13 +22,7 @@ if __name__ == '__main__':
     
     tokenizer = Tokenizer(cfg['transformer']['max_seq_length'])
     collator = Collator()
-    Augmenter = VarialeSizeAugmenter(cfg['transform']['h'], 
-                                     cfg['transform']['min_w'], 
-                                     cfg['transform']['max_w'],
-                                     (cfg['transform']['ksize'][0], cfg['transform']['ksize'][1]),
-                                     cfg['transform']['sigmax'],
-                                     cfg['transform']['convert']
-                                    )
+    Augmenter = get_augmenter(cfg)
     sampler = VariableSizeSampler if cfg['backbone']['type'] == 'cnn' else None
 
     dataModule = OCRDataModule(

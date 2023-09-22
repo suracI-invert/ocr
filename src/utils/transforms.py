@@ -267,7 +267,26 @@ class VarialeSizeAugmenter(object):
             VariableResize(h, min_w, max_w, convert),
             Binarize(ksize, sigmax),
             ToTensor(),
+        ]) if convert else Compose([
+            VariableResize(h, min_w, max_w, convert),
+            ToTensor(),
         ])
 
     def __call__(self, img: Image.Image) -> Tensor:
         return self.aug(img)
+    
+
+def get_augmenter(cfg):
+    if cfg['backbone']['type'] == 'cnn':
+        return VarialeSizeAugmenter(cfg['transform']['h'], 
+                                     cfg['transform']['min_w'], 
+                                     cfg['transform']['max_w'],
+                                     (cfg['transform']['ksize'][0], cfg['transform']['ksize'][1]),
+                                     cfg['transform']['sigmax'],
+                                     cfg['transform']['convert'])
+    if cfg['backbone']['type'] == 'transformers':
+        if cfg['backbone']['arg']['arch'] == 'vit':
+            return VITAugmenter(cfg['backbone']['arg']['pretrained'])
+        if cfg['backbone']['arg']['arch'] == 'swin':
+            return SwinAugmenter(cfg['backbone']['arg']['pretrained'])
+    raise('Cannot find approriate augmenter')
