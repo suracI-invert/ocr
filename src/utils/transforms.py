@@ -260,7 +260,7 @@ class AlbumentationsTransform(object):
         augmented = self.aug(image=img)
         img = augmented['image']
         return img
-
+      
 class VarialeSizeAugmenter(object):
     def __init__(self, h, min_w, max_w, ksize: Tuple[int, int] = (3, 3), sigmax: float = 0, convert= True):
         self.aug = Compose([
@@ -290,3 +290,56 @@ def get_augmenter(cfg):
         if cfg['backbone']['arg']['arch'] == 'swin':
             return SwinAugmenter(cfg['backbone']['arg']['pretrained'])
     raise('Cannot find approriate augmenter')
+    
+class SwinAlbumentationsAugmenter(object):
+    def __init__(self, pretrained) -> None:
+        image_processor = AutoImageProcessor.from_pretrained(pretrained)
+        size = (
+            image_processor.size["shortest_edge"]
+            if "shortest_edge" in image_processor.size
+            else (image_processor.size["height"], image_processor.size["width"])
+        )
+        self.aug = A.Compose([
+            # Blur
+            A.OneOf([
+                A.GaussianBlur(p=0.3, sigma_limit=(0, 1.0)),
+                A.MotionBlur(p=0.3, blur_limit=3),
+            ]),
+            
+            # Color
+            A.OneOf([
+                A.HueSaturationValue(p=0.3, hue_shift_limit=(-10, 10), sat_shift_limit=(-10, 10)),
+                A.GaussNoise(p=0.3),
+                A.ColorJitter(p=0.3, brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
+                A.RGBShift(p=0.3),
+                A.ChannelShuffle(p=0.3),
+                A.RandomBrightnessContrast(p=0.3, brightness_limit=(-0.2, 0.2), contrast_limit=(-0.2, 0.2)),
+            ]),
+
+            # Dropout and multiply
+            A.OneOf([
+                A.CoarseDropout(p=0.1, max_holes=4, max_height=0.08, max_width=0.08),
+                A.MultiplicativeNoise(p=0.3, multiplier=(0.6, 1.4)),
+            ]),
+
+            # Compression
+            A.ImageCompression(p=0.3, quality_lower=70, quality_upper=90),
+
+            # Distortions
+            A.OneOf([
+                A.Perspective(p=0.3, scale=(0.01, 0.01)),
+                A.ShiftScaleRotate(p=0.3, scale_limit=(-0.1, 0.1), shift_limit=(-0.05, 0.05), rotate_limit=(-5, 5)),
+                A.Affine(p=0.3, scale=(0.7, 1.3), translate_percent=(-0.1, 0.1)),
+                A.PiecewiseAffine(p=0.3, scale=(0.01, 0.01)),
+            ]),
+
+            A.Resize(size[0], size[1]),
+            A.Normalize(mean=image_processor.image_mean, std=image_processor.image_std),
+            ToTensorV2(),
+        ])
+    
+    def __call__(self, img):
+        img = np.array(img)
+        augmented = self.aug(image=img)
+        img = augmented['image']
+        return img

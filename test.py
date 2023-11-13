@@ -107,3 +107,4 @@ print(models.efficientnet_b0())
 # net = Net(len(Tokenizer().chars), 'transformers', vit_args, trans_args)
 
 # print(net.backbone)
+
