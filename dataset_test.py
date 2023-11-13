@@ -1,44 +1,53 @@
 from src.data.components.collator import Collator
 from src.models.tokenizer import Tokenizer
 from src.data.datamodule import OCRDataModule
-from src.utils.transforms import Resize, ToTensor, AlbumentationsTransform
+from src.data.components.sampler import VariableSizeSampler
+from src.utils.transforms import Resize, ToTensor, AlbumentationsTransform, VITAugmenter, VariableResize, VarialeSizeAugmenter
 from torchvision.transforms import Compose
-from src.utils.ocr_utils import imshow_batch
-import albumentations as A
+from torchvision.utils import save_image
 
-tokenizer = Tokenizer()
-collator = Collator()
-Augmenter = AlbumentationsTransform((70, 140))
+from tqdm import tqdm
 
-dataModule = OCRDataModule(
-    data_dir= './data/', map_file= 'train_line.txt',
-    test_dir= './data/new_public_test',
-    tokenizer= tokenizer,
-    train_val_split= [100_000, 3_000],
-    batch_size= 64,
-    num_workers= 0,
-    pin_memory= False,
-    transforms= Augmenter,
-    collate_fn= collator,
-    sampler= None
-)
+if __name__ == '__main__':
+    tokenizer = Tokenizer()
+    collator = Collator()
+    # Augmenter = AlbumentationsTransform((70, 140))
 
-dataModule.setup()
+    dataModule = OCRDataModule(
+        data_dir= './data/new_train', map_file= './data/train_gt.txt',
+        test_dir= './data/new_public_test',
+        tokenizer= tokenizer,
+        train_val_split= [100_000, 3_000],
+        batch_size= 16,
+        num_workers= 2,
+        pin_memory= False,
+        transforms= VarialeSizeAugmenter(32, 32, 512),
+        collate_fn= collator,
+        sampler= VariableSizeSampler,
+        h= 32,
+        min_w= 32,
+        max_w= 512
+    )
 
-print(len(dataModule.data_train))
-print(len(dataModule.data_valid))
-print(len(dataModule.data_test))
+    dataModule.setup()
 
-sample = next(iter(dataModule.train_dataloader()))
 
-# print(sample['filename'])
-# print(sample['tgt_input'])
-# print(sample['tgt_output'])
-# print(sample['tgt_input'].shape)
-# print(sample['tgt_output'].shape)
 
-# print(tokenizer.batch_decode(sample['tgt_output']))
+    for _ in tqdm(dataModule.train_dataloader(), desc= 'test running train dm'):
+        pass
+    for _ in tqdm(dataModule.val_dataloader(), desc= 'test running val dm'):
+        pass
+    for _ in tqdm(dataModule.test_dataloader(), desc= 'test running test dm'):
+        pass
 
-print(sample)
-# print(next(iter(dataModule.test_dataloader())))
-imshow_batch(sample['img'])
+    # print(sample['filename'])
+    # print(sample['tgt_input'])
+    # print(sample['tgt_output'])
+    # print(sample['tgt_input'].shape)
+    # print(sample['tgt_output'].shape)
+
+    # print(tokenizer.batch_decode(sample['tgt_output']))
+
+    # print(sample)
+    # print(sample['img'].shape)
+    # print(next(iter(dataModule.test_dataloader())))

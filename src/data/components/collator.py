@@ -21,9 +21,7 @@ class Collator(object):
 
         tgt_input = np.array(tgt_input, dtype=np.int64).T
 
-        # output got shifted left 1 pos -> got rid of <s> token ? no idea why do that : currently testing
         tgt_output = np.roll(tgt_input, -1, 0).T
-        # tgt_output = np.roll(tgt_input, 0, 0).T
         tgt_output[:, -1] = 0
         
         if self.masked_language_model:

@@ -1,0 +1,101 @@
+misc:
+  set_precision_matmul: True
+  precision: medium
+
+transform:
+  max_w: 512
+  min_w: 32
+  h: 32
+  ksize:
+    - 3
+    - 3
+  sigmax: 0
+  convert: True
+
+transformer:
+  d_model: 256
+  nhead: 8
+  num_encoder_layers: 6
+  num_decoder_layers: 6
+  dim_feedforward: 2048
+  max_seq_length: 512
+  pos_dropout: 0.2
+  trans_dropout: 0.2
+
+backbone:
+  type: cnn
+  arg:
+    arch: efficientnet
+    ver: b1
+    hidden: 256
+    pretrained: True
+    dropout: 0.2
+
+data:
+  data_dir: ./data/new_train
+  map_file: ./data/train_gt.txt
+  test_dir: ./data/new_public_test
+  train_val_split:
+    - 100_000
+    - 3_000 
+  batch_size: 16
+  num_workers: 4
+  pin_memory: True
+
+optimizer:
+  type: adamw
+  arg:
+    lr: 0.001
+    eps: 0.00000001
+    weight_decay: 0.1
+
+scheduler:
+  type: reduceOnPlataeu
+  arg:
+    mode: min
+    factor: 0.01
+    patience: 2
+    threshold: 0.00001
+    threshold_mode: rel
+  extra:
+    monitor: val_loss
+    interval: epoch
+    frequency: 2
+
+# logger:
+#   type: tensorboard
+#   save_dir: log
+
+logger:
+  type: wandb
+  save_dir: log
+  project: bkai-ocr
+  log_model: True
+  watch: True
+
+checkpoint:
+  dirpath: weights
+  filename: attentionocr_vgg
+  monitor: val_cer
+  save_on_train_epoch_end: True
+  save_top_k: 1
+
+early_stopping:
+  monitor: val_cer
+  min_delta: 0.001
+  patience: 2
+  mode: min
+
+profiler:
+  type: advanced
+  dirpath: log/profiler
+  filename: perf_logs
+
+trainer:
+  accelerator: gpu
+  precision: 16-mixed
+  max_epochs: 25
+  benchmark: True
+  log_every_n_steps: 5
+  check_val_every_n_epoch: 1
+  num_sanity_val_steps: 2

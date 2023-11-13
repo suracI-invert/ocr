@@ -1,0 +1,53 @@
+backbone:
+  type: transformers
+  arg:
+    arch: vit
+    hidden: 256
+    dropout: 0.2
+    pretrained: google/vit-base-patch16-224
+
+backbone:
+  type: transformers
+  arg:
+    arch: swin
+    hidden: 256
+    dropout: 0.2
+    pretrained: microsoft/swin-base-patch4-window7-224-in22k
+
+backbone:
+  type: cnn
+  arg:
+    arch: vgg
+    pretrained: True
+    ss:
+      - [2, 2]
+      - [2, 2]
+      - [2, 1]
+      - [2, 1]
+      - [2, 1]
+      - [1, 1]
+    ks:
+      - [2, 2]
+      - [2, 2]
+      - [2, 1]
+      - [2, 1]
+      - [2, 1]
+      - [1, 1]
+    hidden: 256
+    dropout: 0.2
+
+backbone:
+  type: cnn
+  arg:
+    arch: resnet50
+    ss: ~
+    hidden: 256
+
+backbone:
+  type: cnn
+  arg:
+    arch: efficientnet
+    ver: b7
+    hidden: 256
+    pretrained: True
+    dropout: 0.2
